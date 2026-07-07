@@ -1,0 +1,30 @@
+2026-07-06 17:07:17 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:07:17 | WARNING  | services.auth_service | Usuario admin creado por defecto (admin/admin123). Cámbielo en producción.
+2026-07-06 17:07:25 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:07:48 | INFO     | services.excel_import_service | [10%] Leyendo archivo y limpiando estructura...
+2026-07-06 17:07:48 | INFO     | services.excel_import_service | [50%] Parseando jerarquía presupuestal...
+2026-07-06 17:07:48 | INFO     | services.excel_import_service | [70%] Registrando proyecto...
+2026-07-06 17:07:48 | INFO     | services.excel_import_service | [85%] Insertando partidas presupuestales...
+2026-07-06 17:07:48 | INFO     | services.excel_import_service | [100%] Importación completada.
+2026-07-06 17:12:15 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:12:21 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:14:58 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:15:04 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:15:30 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:15:35 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:16:07 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:16:12 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:17:09 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:17:13 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:19:24 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:19:31 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:20:57 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:21:11 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:23:42 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:23:49 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:26:28 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:26:38 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-06 17:28:48 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-06 17:29:39 | INFO     | services.auth_service | Login exitoso: admin
+2026-07-07 14:03:00 | INFO     | database.connection | Base de datos inicializada (sqlite:///C:/Users/PC 178/Documents/presupuesto_app/data/presupuesto.db).
+2026-07-07 14:03:11 | INFO     | services.auth_service | Login exitoso: admin
