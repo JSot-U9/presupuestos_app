@@ -10,7 +10,7 @@ from models.presupuesto import Presupuesto
 from models.proyecto import Proyecto
 
 COLUMNAS_PRESUPUESTO = [
-    "Proyecto", "Rubro", "Programa", "Meta", "Categoria", "Clasificador",
+    "Proyecto", "Rubro", "Programa", "Meta", "Meta_Numero", "Meta_Codigo", "Categoria", "Clasificador",
     "Descripcion", "PIA", "PIM", "Certificacion", "Compromiso", "Devengado",
     "Saldo_Certificacion", "Saldo_Compromiso", "Saldo_Devengado", "% Avance",
 ]
@@ -23,6 +23,8 @@ def exportar_presupuesto_excel(registros: list[Presupuesto], destino: str | Path
             "Rubro": r.rubro,
             "Programa": r.programa,
             "Meta": r.meta,
+            "Meta_Numero": r.meta_numero,
+            "Meta_Codigo": r.meta_codigo,
             "Categoria": r.categoria,
             "Clasificador": r.clasificador,
             "Descripcion": r.descripcion,

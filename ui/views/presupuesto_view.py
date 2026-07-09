@@ -24,7 +24,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 COLUMNAS = [
-    "Proyecto", "Clasificador", "Descripción", "PIA", "PIM",
+    "Proyecto", "Meta", "Clasificador", "Descripción", "PIA", "PIM",
     "Certificado", "Comprometido", "Devengado", "Saldo Devengado", "% Avance",
 ]
 
@@ -50,6 +50,11 @@ class PresupuestoView(QWidget):
         self.combo_proyecto.setFixedWidth(220)
         self.combo_proyecto.currentIndexChanged.connect(self.cargar_datos)
         header.addWidget(self.combo_proyecto)
+
+        self.combo_meta = QComboBox()
+        self.combo_meta.setFixedWidth(220)
+        self.combo_meta.currentIndexChanged.connect(self.cargar_datos)
+        header.addWidget(self.combo_meta)
 
         self.input_busqueda = QLineEdit()
         self.input_busqueda.setPlaceholderText("Buscar clasificador o descripción...")
@@ -83,12 +88,30 @@ class PresupuestoView(QWidget):
         self.combo_proyecto.setCurrentIndex(idx if idx >= 0 else 0)
         self.combo_proyecto.blockSignals(False)
 
+    def _refrescar_combo_metas(self) -> None:
+        actual = self.combo_meta.currentData()
+        self.combo_meta.blockSignals(True)
+        self.combo_meta.clear()
+        self.combo_meta.addItem("Todas las metas", None)
+        try:
+            metas = PresupuestoController.listar_metas(proyecto_id=self._proyecto_id_actual())
+            for m in metas:
+                label = f"{m.get('meta_numero') or '-'} - {m.get('meta_codigo') or ''} { (m.get('meta') or '')[:40]}"
+                self.combo_meta.addItem(label, m.get("meta_codigo"))
+        except Exception:
+            logger.exception("Error listando metas")
+        idx = self.combo_meta.findData(actual)
+        self.combo_meta.setCurrentIndex(idx if idx >= 0 else 0)
+        self.combo_meta.blockSignals(False)
+
     def cargar_datos(self) -> None:
         self._refrescar_combo_proyectos()
+        self._refrescar_combo_metas()
         try:
             registros = PresupuestoController.listar(
                 proyecto_id=self._proyecto_id_actual(),
                 texto_busqueda=self.input_busqueda.text(),
+                meta_codigo=self.combo_meta.currentData(),
             )
         except Exception:  # noqa: BLE001
             logger.exception("Error listando presupuesto")
@@ -98,6 +121,7 @@ class PresupuestoView(QWidget):
         for fila, r in enumerate(registros):
             valores = [
                 r.proyecto.codigo if r.proyecto else "-",
+                r.meta_numero or r.meta or "-",
                 r.clasificador or "-",
                 r.descripcion or "-",
                 f"{r.pia:,.2f}",
@@ -118,7 +142,9 @@ class PresupuestoView(QWidget):
         if not destino:
             return
         try:
-            PresupuestoController.exportar_excel(destino, proyecto_id=self._proyecto_id_actual())
+            PresupuestoController.exportar_excel(
+                destino, proyecto_id=self._proyecto_id_actual(), meta_codigo=self.combo_meta.currentData()
+            )
         except Exception as exc:  # noqa: BLE001
             logger.exception("Error exportando presupuesto")
             QMessageBox.critical(self, "Error", f"No se pudo exportar: {exc}")

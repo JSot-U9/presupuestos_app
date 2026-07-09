@@ -39,6 +39,32 @@ PATRONES_ENCABEZADO = [
     "% AVANCE",
 ]
 
+<<<<<<< Updated upstream
+=======
+# Detecta el proyecto/actividad de cada bloque del reporte, en los dos
+# formatos de exportación SIAF observados. En ambos casos el identificador
+# estable (comparable entre reportes) es el código de 7 dígitos de la
+# actividad/proyecto específico (p.ej. "5000276"), no el "SEC.FUNC" (que es
+# solo un número de secuencia interno del propio archivo).
+#
+# Formato "por Proyecto" (una sola línea combinada):
+#   "0035  0066 3000001 5000276 GESTION DEL PROGRAMA 22 048 0109"
+#    SEC.FUNC PROD/PRY ACT/AI/OBR  cod.actividad   descripción      FN DVF GRPF
+PROYECTO_LINEA_COMBINADA_RE = re.compile(
+    r"^\d{4}\s+\d{4}\s+\d+\s+(\d{5,7})\s+(.+?)\s+\d{1,3}\s+\d{1,3}\s+\d{1,4}$"
+)
+
+# Formato "por Programa" (código y descripción en líneas separadas):
+#   "3000001 ACCIONES COMUNES"
+#   "5000276  GESTION DEL PROGRAMA"
+# Se usa el ÚLTIMO código de 7 dígitos visto antes de las filas de datos,
+# que es siempre el más específico (la actividad, no el proyecto genérico).
+PROYECTO_LINEA_SEPARADA_RE = re.compile(r"^(\d{5,7})\s+(.+)$")
+
+# Detecta líneas de "Meta: <numero> - <codigo> <descripcion>"
+META_LINE_RE = re.compile(r"^META[:\s]*([0-9]+)\s*-\s*(\d{5,7})\b\s*(.*)$", re.IGNORECASE)
+
+>>>>>>> Stashed changes
 ProgressCallback = Callable[[int, str], None]
 
 
@@ -161,6 +187,11 @@ class ExcelPresupuestoImporter:
         df.columns = range(df.shape[1])
 
         rubro = programa = meta = categoria = None
+<<<<<<< Updated upstream
+=======
+        meta_numero = meta_codigo = None
+        proyecto_codigo = proyecto_nombre = None
+>>>>>>> Stashed changes
         filas: list[dict] = []
 
         for _, fila in df.iterrows():
@@ -168,6 +199,25 @@ class ExcelPresupuestoImporter:
             if c0 == "":
                 continue
 
+<<<<<<< Updated upstream
+=======
+            # --- Detección de proyecto/actividad (ambos formatos) ---
+            m_combinado = PROYECTO_LINEA_COMBINADA_RE.match(c0)
+            if m_combinado:
+                proyecto_codigo, proyecto_nombre = m_combinado.group(1), m_combinado.group(2)
+                meta = None  # nuevo proyecto: se espera una nueva línea "Meta: ..."
+                meta_numero = meta_codigo = None
+                continue
+
+            m_separado = PROYECTO_LINEA_SEPARADA_RE.match(c0)
+            if m_separado:
+                # El último código de 7 dígitos visto antes de las filas de
+                # datos es siempre el más específico (la actividad real).
+                proyecto_codigo, proyecto_nombre = m_separado.group(1), m_separado.group(2)
+                meta_numero = meta_codigo = None
+                continue
+
+>>>>>>> Stashed changes
             if c0.startswith("00 "):
                 rubro = c0
                 continue
@@ -175,7 +225,15 @@ class ExcelPresupuestoImporter:
                 programa = c0
                 continue
             if c0.upper().startswith("META"):
-                meta = c0
+                m_meta = META_LINE_RE.match(c0)
+                if m_meta:
+                    meta_numero, meta_codigo, meta_desc = m_meta.group(1), m_meta.group(2), m_meta.group(3)
+                    # conservar también el texto completo original
+                    meta = f"META: {meta_numero} - {meta_codigo} {meta_desc}".strip()
+                else:
+                    # fallback defensivo: guardar el texto tal cual
+                    meta = c0
+                    meta_numero = meta_codigo = None
                 continue
             if c0 in ("5", "6"):
                 categoria = fila[1]
@@ -189,6 +247,8 @@ class ExcelPresupuestoImporter:
                         "rubro": rubro,
                         "programa": programa,
                         "meta": meta,
+                        "meta_numero": meta_numero,
+                        "meta_codigo": meta_codigo,
                         "categoria": categoria,
                         "clasificador": c0,
                         "descripcion": fila[1],
@@ -274,6 +334,8 @@ class ExcelPresupuestoImporter:
                 rubro=fila["rubro"],
                 programa=fila["programa"],
                 meta=fila["meta"],
+                meta_numero=str(fila["meta_numero"]) if fila.get("meta_numero") is not None else None,
+                meta_codigo=str(fila["meta_codigo"]) if fila.get("meta_codigo") is not None else None,
                 categoria=str(fila["categoria"]) if fila["categoria"] is not None else None,
                 clasificador=fila["clasificador"],
                 descripcion=fila["descripcion"],

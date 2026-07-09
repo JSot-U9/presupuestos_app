@@ -34,6 +34,9 @@ class Presupuesto(Base):
     rubro: Mapped[str | None] = mapped_column(String(200), nullable=True)
     programa: Mapped[str | None] = mapped_column(String(200), nullable=True)
     meta: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    # Campos estructurados para agrupador/filtrado: número y código de la meta
+    meta_numero: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    meta_codigo: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     categoria: Mapped[str | None] = mapped_column(String(100), nullable=True)
     clasificador: Mapped[str | None] = mapped_column(String(60), nullable=True)
     descripcion: Mapped[str | None] = mapped_column(String(300), nullable=True)
