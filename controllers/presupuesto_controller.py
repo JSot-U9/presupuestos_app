@@ -53,6 +53,42 @@ class PresupuestoController:
             return [str(c[0]) for c in query.all() if c[0] is not None]
 
     @staticmethod
+    def listar_programas(proyecto_id: Optional[int] = None) -> list[str]:
+        """Retorna lista de códigos de programa únicos."""
+        with get_session() as session:
+            query = session.query(Presupuesto.programa).distinct().order_by(Presupuesto.programa)
+            if proyecto_id:
+                query = query.filter(Presupuesto.proyecto_id == proyecto_id)
+            return [str(p[0]) for p in query.all() if p[0] is not None]
+
+    @staticmethod
+    def listar_funciones(proyecto_id: Optional[int] = None) -> list[str]:
+        """Retorna lista de códigos de función únicos."""
+        with get_session() as session:
+            query = session.query(Presupuesto.funcion).distinct().order_by(Presupuesto.funcion)
+            if proyecto_id:
+                query = query.filter(Presupuesto.proyecto_id == proyecto_id)
+            return [str(f[0]) for f in query.all() if f[0] is not None]
+
+    @staticmethod
+    def listar_productos(proyecto_id: Optional[int] = None) -> list[str]:
+        """Retorna lista de códigos de producto únicos."""
+        with get_session() as session:
+            query = session.query(Presupuesto.producto).distinct().order_by(Presupuesto.producto)
+            if proyecto_id:
+                query = query.filter(Presupuesto.proyecto_id == proyecto_id)
+            return [str(p[0]) for p in query.all() if p[0] is not None]
+
+    @staticmethod
+    def listar_actividades(proyecto_id: Optional[int] = None) -> list[str]:
+        """Retorna lista de códigos de actividad únicos."""
+        with get_session() as session:
+            query = session.query(Presupuesto.actividad_codigo).distinct().order_by(Presupuesto.actividad_codigo)
+            if proyecto_id:
+                query = query.filter(Presupuesto.proyecto_id == proyecto_id)
+            return [str(a[0]) for a in query.all() if a[0] is not None]
+
+    @staticmethod
     def eliminar(presupuesto_id: int) -> None:
         with get_session() as session:
             PresupuestoService.eliminar(session, presupuesto_id)

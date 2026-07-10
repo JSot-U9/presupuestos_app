@@ -32,9 +32,20 @@ class Presupuesto(Base):
     anio: Mapped[int] = mapped_column(Integer, nullable=False)
     mes: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # --- Estructura presupuestal jerárquica ---
     rubro: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    programa: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    meta: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    meta: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+    programa: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+    producto: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    actividad_codigo: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    actividad_descripcion: Mapped[str | None] = mapped_column(String(300), nullable=True)
+
+    # --- Clasificadores funcionales (MEF) ---
+    funcion: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+    division_funcional: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+    grupo_funcional: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+
+    # Categoría heredada (se mantiene por compatibilidad)
     categoria: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # `clasificador` guarda el código YA NORMALIZADO (sin espacios), que es

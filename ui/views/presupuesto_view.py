@@ -19,19 +19,21 @@ from PySide6.QtWidgets import (
 
 from controllers.presupuesto_controller import PresupuestoController
 from controllers.proyecto_controller import ProyectoController
+from ui.views.presupuesto_detail_dialog import PresupuestoDetailDialog
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 COLUMNAS = [
-    "Proyecto", "Clasificador", "Descripción", "Meta", "PIA", "PIM",
-    "Certificado", "Comprometido", "Devengado", "Saldo Devengado", "% Avance",
+    "Proyecto", "Meta", "Programa", "Producto", "Actividad", "Clasificador", 
+    "Descripción", "Función", "PIM", "Certificado", "Devengado", "% Avance",
 ]
 
 
 class PresupuestoView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._registros_actuales = []  # Guardar referencia a registros para abrir detalles
         self._construir_ui()
         self.cargar_datos()
 
@@ -64,22 +66,28 @@ class PresupuestoView(QWidget):
 
         filtros = QHBoxLayout()
         self.combo_meta = QComboBox()
-        self.combo_meta.setFixedWidth(160)
+        self.combo_meta.setFixedWidth(120)
         self.combo_meta.currentIndexChanged.connect(self.cargar_datos)
         filtros.addWidget(QLabel("Meta:"))
         filtros.addWidget(self.combo_meta)
 
+        self.combo_programa = QComboBox()
+        self.combo_programa.setFixedWidth(120)
+        self.combo_programa.currentIndexChanged.connect(self.cargar_datos)
+        filtros.addWidget(QLabel("Programa:"))
+        filtros.addWidget(self.combo_programa)
+
+        self.combo_funcion = QComboBox()
+        self.combo_funcion.setFixedWidth(100)
+        self.combo_funcion.currentIndexChanged.connect(self.cargar_datos)
+        filtros.addWidget(QLabel("Función:"))
+        filtros.addWidget(self.combo_funcion)
+
         self.combo_rubro = QComboBox()
-        self.combo_rubro.setFixedWidth(280)
+        self.combo_rubro.setFixedWidth(220)
         self.combo_rubro.currentIndexChanged.connect(self.cargar_datos)
         filtros.addWidget(QLabel("Rubro:"))
         filtros.addWidget(self.combo_rubro)
-
-        self.combo_categoria = QComboBox()
-        self.combo_categoria.setFixedWidth(100)
-        self.combo_categoria.currentIndexChanged.connect(self.cargar_datos)
-        filtros.addWidget(QLabel("Categoría:"))
-        filtros.addWidget(self.combo_categoria)
         filtros.addStretch()
         layout.addLayout(filtros)
 
@@ -88,6 +96,7 @@ class PresupuestoView(QWidget):
         self.tabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tabla.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tabla.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.tabla.doubleClicked.connect(self._mostrar_detalles)
         layout.addWidget(self.tabla)
 
     def _proyecto_id_actual(self) -> int | None:
@@ -110,8 +119,9 @@ class PresupuestoView(QWidget):
     def _refrescar_filtros(self) -> None:
         proyecto_id = self._proyecto_id_actual()
         meta_actual = self.combo_meta.currentData()
+        programa_actual = self.combo_programa.currentData()
+        funcion_actual = self.combo_funcion.currentData()
         rubro_actual = self.combo_rubro.currentData()
-        categoria_actual = self.combo_categoria.currentData()
 
         self.combo_meta.blockSignals(True)
         self.combo_meta.clear()
@@ -121,6 +131,26 @@ class PresupuestoView(QWidget):
         idx = self.combo_meta.findData(meta_actual)
         self.combo_meta.setCurrentIndex(idx if idx >= 0 else 0)
         self.combo_meta.blockSignals(False)
+
+        self.combo_programa.blockSignals(True)
+        self.combo_programa.clear()
+        self.combo_programa.addItem("Todos los prog.", None)
+        for p in PresupuestoController.listar_programas(proyecto_id):
+            self.combo_programa.addItem(str(p), p)
+        idx = self.combo_programa.findData(programa_actual)
+        if idx >= 0:
+            self.combo_programa.setCurrentIndex(idx)
+        self.combo_programa.blockSignals(False)
+
+        self.combo_funcion.blockSignals(True)
+        self.combo_funcion.clear()
+        self.combo_funcion.addItem("Todas", None)
+        for f in PresupuestoController.listar_funciones(proyecto_id):
+            self.combo_funcion.addItem(str(f), f)
+        idx = self.combo_funcion.findData(funcion_actual)
+        if idx >= 0:
+            self.combo_funcion.setCurrentIndex(idx)
+        self.combo_funcion.blockSignals(False)
 
         self.combo_rubro.blockSignals(True)
         self.combo_rubro.clear()
@@ -132,16 +162,6 @@ class PresupuestoView(QWidget):
             self.combo_rubro.setCurrentIndex(idx)
         self.combo_rubro.blockSignals(False)
 
-        self.combo_categoria.blockSignals(True)
-        self.combo_categoria.clear()
-        self.combo_categoria.addItem("Todas las categorías", None)
-        for c in PresupuestoController.listar_categorias(proyecto_id):
-            self.combo_categoria.addItem(c, c)
-        idx = self.combo_categoria.findData(categoria_actual)
-        if idx >= 0:
-            self.combo_categoria.setCurrentIndex(idx)
-        self.combo_categoria.blockSignals(False)
-
     def cargar_datos(self) -> None:
         self._refrescar_combo_proyectos()
         self._refrescar_filtros()
@@ -151,29 +171,40 @@ class PresupuestoView(QWidget):
                 texto_busqueda=self.input_busqueda.text(),
                 meta=self.combo_meta.currentData(),
                 rubro=self.combo_rubro.currentData(),
-                categoria=self.combo_categoria.currentData(),
+                categoria=None,  # Categoría deprecada, mantenida para compatibilidad
             )
         except Exception:  # noqa: BLE001
             logger.exception("Error listando presupuesto")
             return
 
+        self._registros_actuales = registros
         self.tabla.setRowCount(len(registros))
         for fila, r in enumerate(registros):
             valores = [
                 r.proyecto.codigo if r.proyecto else "-",
+                r.meta or "-",
+                r.programa or "-",
+                r.producto or "-",
+                f"{r.actividad_codigo or '-'} ({r.actividad_descripcion[:20] if r.actividad_descripcion else '-'})",
                 r.clasificador or "-",
                 r.descripcion or "-",
-                r.meta or "-",
-                f"{r.pia:,.2f}",
+                r.funcion or "-",
                 f"{r.pim:,.2f}",
                 f"{r.certificacion:,.2f}",
-                f"{r.compromiso:,.2f}",
                 f"{r.devengado:,.2f}",
-                f"{r.saldo_devengado:,.2f}",
                 f"{r.porcentaje_avance:.2f}%",
             ]
             for col, valor in enumerate(valores):
                 self.tabla.setItem(fila, col, QTableWidgetItem(valor))
+
+    def _mostrar_detalles(self) -> None:
+        """Muestra un diálogo con todos los detalles del presupuesto seleccionado."""
+        fila_actual = self.tabla.currentRow()
+        if fila_actual < 0 or fila_actual >= len(self._registros_actuales):
+            return
+        presupuesto = self._registros_actuales[fila_actual]
+        dialogo = PresupuestoDetailDialog(presupuesto, parent=self)
+        dialogo.exec()
 
     def _exportar_excel(self) -> None:
         destino, _ = QFileDialog.getSaveFileName(

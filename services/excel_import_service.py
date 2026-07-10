@@ -49,9 +49,11 @@ PATRONES_ENCABEZADO = [
 #
 # Formato "por Proyecto" (una sola línea combinada):
 #   "0035  0066 3000001 5000276 GESTION DEL PROGRAMA 22 048 0109"
-#    SEC.FUNC PROD/PRY ACT/AI/OBR  cod.actividad   descripción      FN DVF GRPF
+#    META PROG PROD  ACT_COD    ACT_DESC                  FN DVF GRPF
+# Captura: (1=meta, 2=programa, 3=producto, 4=actividad_codigo, 5=actividad_descripcion,
+#           6=funcion, 7=division_funcional, 8=grupo_funcional)
 PROYECTO_LINEA_COMBINADA_RE = re.compile(
-    r"^(\d{4})\s+\d{4}\s+\d+\s+(\d{5,7})\s+(.+?)\s+\d{1,3}\s+\d{1,3}\s+\d{1,4}$"
+    r"^(\d{4})\s+(\d{4})\s+(\d+)\s+(\d{5,7})\s+(.+?)\s+(\d{1,3})\s+(\d{1,3})\s+(\d{1,4})$"
 )
 
 # Formato "por Programa" (código y descripción en líneas separadas):
@@ -184,7 +186,9 @@ class ExcelPresupuestoImporter:
         df = df.copy()
         df.columns = range(df.shape[1])
 
-        rubro = programa = meta = categoria = None
+        rubro = None
+        meta = programa = producto = actividad_codigo = actividad_descripcion = None
+        funcion = division_funcional = grupo_funcional = None
         proyecto_codigo = proyecto_nombre = None
         filas: list[dict] = []
 
@@ -197,14 +201,23 @@ class ExcelPresupuestoImporter:
             m_combinado = PROYECTO_LINEA_COMBINADA_RE.match(c0)
             if m_combinado:
                 meta = m_combinado.group(1)
-                proyecto_codigo, proyecto_nombre = m_combinado.group(2), m_combinado.group(3)
+                programa = m_combinado.group(2)
+                producto = m_combinado.group(3)
+                actividad_codigo = m_combinado.group(4)
+                actividad_descripcion = m_combinado.group(5)
+                funcion = m_combinado.group(6)
+                division_funcional = m_combinado.group(7)
+                grupo_funcional = m_combinado.group(8)
+                proyecto_codigo, proyecto_nombre = actividad_codigo, actividad_descripcion
                 continue
 
             m_separado = PROYECTO_LINEA_SEPARADA_RE.match(c0)
             if m_separado:
-                # El último código de 7 dígitos visto antes de las filas de
-                # datos es siempre el más específico (la actividad real).
-                proyecto_codigo, proyecto_nombre = m_separado.group(1), m_separado.group(2)
+                # En formato separado, se usa el ÚLTIMO código de 7 dígitos
+                # visto antes de las filas de datos (la actividad más específica).
+                actividad_codigo = m_separado.group(1)
+                actividad_descripcion = m_separado.group(2)
+                proyecto_codigo, proyecto_nombre = actividad_codigo, actividad_descripcion
                 continue
 
             if c0.startswith("00 "):
@@ -216,8 +229,7 @@ class ExcelPresupuestoImporter:
             if c0.upper().startswith("META"):
                 continue
             if c0 in ("5", "6"):
-                categoria = fila[1]
-                continue
+                continue  # Ignora categoría (prescindible en la nueva estructura)
             if c0.upper().startswith("TOTAL"):
                 continue
 
@@ -227,9 +239,15 @@ class ExcelPresupuestoImporter:
                         "proyecto_codigo": proyecto_codigo,
                         "proyecto_nombre": proyecto_nombre,
                         "rubro": rubro,
-                        "programa": programa,
                         "meta": meta,
-                        "categoria": categoria,
+                        "programa": programa,
+                        "producto": producto,
+                        "actividad_codigo": actividad_codigo,
+                        "actividad_descripcion": actividad_descripcion,
+                        "funcion": funcion,
+                        "division_funcional": division_funcional,
+                        "grupo_funcional": grupo_funcional,
+                        "categoria": None,  # Deprecated, pero se mantiene para compatibilidad
                         "clasificador": c0,
                         "descripcion": fila[1],
                         "pia": fila[2],
@@ -346,9 +364,15 @@ class ExcelPresupuestoImporter:
                 anio=self.anio,
                 mes=self.mes,
                 rubro=fila["rubro"],
-                programa=fila["programa"],
                 meta=fila["meta"],
-                categoria=str(fila["categoria"]) if fila["categoria"] is not None else None,
+                programa=fila["programa"],
+                producto=fila["producto"],
+                actividad_codigo=fila["actividad_codigo"],
+                actividad_descripcion=fila["actividad_descripcion"],
+                funcion=fila["funcion"],
+                division_funcional=fila["division_funcional"],
+                grupo_funcional=fila["grupo_funcional"],
+                categoria=None,  # Deprecated
                 clasificador=codigo_norm,
                 clasificador_original=codigo_original,
                 clasificador_id=clasificador_catalogo.id if clasificador_catalogo else None,
