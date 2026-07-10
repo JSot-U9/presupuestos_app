@@ -51,7 +51,7 @@ PATRONES_ENCABEZADO = [
 #   "0035  0066 3000001 5000276 GESTION DEL PROGRAMA 22 048 0109"
 #    SEC.FUNC PROD/PRY ACT/AI/OBR  cod.actividad   descripción      FN DVF GRPF
 PROYECTO_LINEA_COMBINADA_RE = re.compile(
-    r"^\d{4}\s+\d{4}\s+\d+\s+(\d{5,7})\s+(.+?)\s+\d{1,3}\s+\d{1,3}\s+\d{1,4}$"
+    r"^(\d{4})\s+\d{4}\s+\d+\s+(\d{5,7})\s+(.+?)\s+\d{1,3}\s+\d{1,3}\s+\d{1,4}$"
 )
 
 # Formato "por Programa" (código y descripción en líneas separadas):
@@ -196,8 +196,8 @@ class ExcelPresupuestoImporter:
             # --- Detección de proyecto/actividad (ambos formatos) ---
             m_combinado = PROYECTO_LINEA_COMBINADA_RE.match(c0)
             if m_combinado:
-                proyecto_codigo, proyecto_nombre = m_combinado.group(1), m_combinado.group(2)
-                meta = None  # nuevo proyecto: se espera una nueva línea "Meta: ..."
+                meta = m_combinado.group(1)
+                proyecto_codigo, proyecto_nombre = m_combinado.group(2), m_combinado.group(3)
                 continue
 
             m_separado = PROYECTO_LINEA_SEPARADA_RE.match(c0)
@@ -214,7 +214,6 @@ class ExcelPresupuestoImporter:
                 programa = c0
                 continue
             if c0.upper().startswith("META"):
-                meta = c0
                 continue
             if c0 in ("5", "6"):
                 categoria = fila[1]

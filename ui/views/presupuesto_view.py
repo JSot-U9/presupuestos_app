@@ -24,7 +24,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 COLUMNAS = [
-    "Proyecto", "Clasificador", "Descripción", "PIA", "PIM",
+    "Proyecto", "Clasificador", "Descripción", "Meta", "PIA", "PIM",
     "Certificado", "Comprometido", "Devengado", "Saldo Devengado", "% Avance",
 ]
 
@@ -100,6 +100,7 @@ class PresupuestoView(QWidget):
                 r.proyecto.codigo if r.proyecto else "-",
                 r.clasificador or "-",
                 r.descripcion or "-",
+                r.meta or "-",
                 f"{r.pia:,.2f}",
                 f"{r.pim:,.2f}",
                 f"{r.certificacion:,.2f}",
