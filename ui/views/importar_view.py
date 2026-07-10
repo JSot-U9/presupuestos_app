@@ -82,7 +82,9 @@ class ImportarView(QWidget):
         subtitulo = QLabel(
             "Admite reportes con celdas combinadas (columnas PIA/PIM/Certificación/"
             "Compromiso/Devengado/Saldos/% Avance). El sistema detecta y corrige "
-            "automáticamente columnas fantasma y cabeceras repetidas."
+            "automáticamente columnas fantasma y cabeceras repetidas, y crea "
+            "automáticamente todos los proyectos/actividades que traiga el archivo "
+            "(no es necesario indicarlos manualmente)."
         )
         subtitulo.setWordWrap(True)
         subtitulo.setStyleSheet("color: #605E5C;")
@@ -100,12 +102,12 @@ class ImportarView(QWidget):
         form.addRow("Archivo *", fila_archivo)
 
         self.input_codigo = QLineEdit()
-        self.input_codigo.setPlaceholderText("Ej: 0035-0066")
-        form.addRow("Código de proyecto *", self.input_codigo)
+        self.input_codigo.setPlaceholderText("Solo si el archivo no trae proyectos identificables")
+        form.addRow("Código de respaldo", self.input_codigo)
 
         self.input_nombre = QLineEdit()
-        self.input_nombre.setPlaceholderText("Nombre descriptivo (opcional)")
-        form.addRow("Nombre de proyecto", self.input_nombre)
+        self.input_nombre.setPlaceholderText("Nombre de respaldo (opcional)")
+        form.addRow("Nombre de respaldo", self.input_nombre)
 
         self.spin_anio = QSpinBox()
         self.spin_anio.setRange(2000, 2100)
@@ -146,7 +148,9 @@ class ImportarView(QWidget):
         ruta = self.input_archivo.text()
         try:
             require_not_empty(ruta, "Archivo")
-            codigo = validar_codigo_proyecto(self.input_codigo.text())
+            codigo_respaldo = self.input_codigo.text().strip()
+            if codigo_respaldo:
+                codigo_respaldo = validar_codigo_proyecto(codigo_respaldo)
         except ValidationError as exc:
             QMessageBox.warning(self, "Datos incompletos", str(exc))
             return
@@ -161,7 +165,7 @@ class ImportarView(QWidget):
             ruta=ruta,
             anio=self.spin_anio.value(),
             mes=self.combo_mes.currentData(),
-            codigo=codigo,
+            codigo=codigo_respaldo or None,
             nombre=self.input_nombre.text(),
         )
         self._worker.moveToThread(self._hilo)
@@ -183,13 +187,31 @@ class ImportarView(QWidget):
     def _on_finalizado(self, resultado) -> None:
         self._log("--- Importación completada ---")
         self._log(f"Filas importadas: {resultado.filas_importadas}")
-        self._log(f"Proyectos nuevos: {resultado.proyectos_detectados}")
+        self._log(f"Proyectos nuevos creados: {len(resultado.proyectos_creados)}")
+        if resultado.proyectos_creados:
+            self._log("  -> " + ", ".join(resultado.proyectos_creados))
+        self._log(f"Proyectos ya existentes (actualizados): {len(resultado.proyectos_existentes)}")
+        if resultado.proyectos_existentes:
+            self._log("  -> " + ", ".join(resultado.proyectos_existentes))
         self._log(f"Columnas fusionadas por celdas combinadas: {len(resultado.columnas_fusionadas)}")
         self._log(f"Filas de encabezado duplicadas eliminadas: {resultado.filas_encabezado_eliminadas}")
-        QMessageBox.information(
-            self, "Importación exitosa",
-            f"Se importaron {resultado.filas_importadas} partidas presupuestales.",
+        for advertencia in resultado.advertencias:
+            self._log(f"AVISO: {advertencia}")
+
+        total_proyectos = len(resultado.proyectos_creados) + len(resultado.proyectos_existentes)
+        mensaje = (
+            f"Se importaron {resultado.filas_importadas} partidas presupuestales "
+            f"en {total_proyectos} proyecto(s) detectado(s) automáticamente "
+            f"({len(resultado.proyectos_creados)} nuevo(s))."
         )
+        if resultado.clasificadores_no_encontrados:
+            no_encontrados = len(set(resultado.clasificadores_no_encontrados))
+            mensaje += (
+                f"\n\n{no_encontrados} clasificador(es) no se encontraron en el catálogo "
+                "cargado en Configuración; se guardó la descripción tal cual venía en el "
+                "reporte. Importa/actualiza el catálogo si crees que faltan códigos."
+            )
+        QMessageBox.information(self, "Importación exitosa", mensaje)
 
     def _on_error(self, mensaje: str) -> None:
         self._log(f"ERROR: {mensaje}")

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from database.base import Base
 
 if TYPE_CHECKING:
+    from models.clasificador import Clasificador
     from models.proyecto import Proyecto
 
 
@@ -35,7 +36,16 @@ class Presupuesto(Base):
     programa: Mapped[str | None] = mapped_column(String(200), nullable=True)
     meta: Mapped[str | None] = mapped_column(String(300), nullable=True)
     categoria: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    clasificador: Mapped[str | None] = mapped_column(String(60), nullable=True)
+
+    # `clasificador` guarda el código YA NORMALIZADO (sin espacios), que es
+    # el que se usa para cruzar con el catálogo oficial (Clasificador).
+    # `clasificador_original` conserva el texto tal cual vino del reporte
+    # SIAF, útil para depuración si el espaciado de origen cambia de formato.
+    clasificador: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    clasificador_original: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    clasificador_id: Mapped[int | None] = mapped_column(
+        ForeignKey("clasificadores.id"), nullable=True, index=True
+    )
     descripcion: Mapped[str | None] = mapped_column(String(300), nullable=True)
 
     pia: Mapped[float] = mapped_column(Float, default=0.0)
@@ -54,6 +64,7 @@ class Presupuesto(Base):
     archivo_origen: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     proyecto: Mapped["Proyecto"] = relationship(back_populates="presupuestos")
+    clasificador_ref: Mapped["Clasificador | None"] = relationship()  # noqa: F821
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Presupuesto {self.clasificador} PIM={self.pim}>"

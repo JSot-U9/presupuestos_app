@@ -8,6 +8,7 @@ from models.usuario import Usuario
 from ui.login_window import LoginWindow
 from ui.views.configuracion_view import ConfiguracionView
 from ui.views.dashboard_view import DashboardView
+from ui.views.importar_meta_view import ImportarMetaView
 from ui.views.importar_view import ImportarView
 from ui.views.presupuesto_view import PresupuestoView
 from ui.views.proyectos_view import ProyectosView
@@ -57,6 +58,7 @@ class MainWindow(QMainWindow):
             "proyectos": ProyectosView(self.usuario.username),
             "presupuesto": PresupuestoView(),
             "importar": ImportarView(),
+            "importar_meta": ImportarMetaView(),
             "reportes": ReportesView(),
             "configuracion": ConfiguracionView(),
         }

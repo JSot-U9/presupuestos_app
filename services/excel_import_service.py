@@ -20,8 +20,10 @@ import pandas as pd
 from sqlalchemy.orm import Session
 
 from config import UMBRAL_MIN_FILAS, UMBRAL_PORCENTAJE
+from models.clasificador import normalizar_codigo
 from models.presupuesto import Presupuesto
 from models.proyecto import Proyecto
+from services.clasificador_service import ClasificadorService
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -39,6 +41,26 @@ PATRONES_ENCABEZADO = [
     "% AVANCE",
 ]
 
+# Detecta el proyecto/actividad de cada bloque del reporte, en los dos
+# formatos de exportación SIAF observados. En ambos casos el identificador
+# estable (comparable entre reportes) es el código de 7 dígitos de la
+# actividad/proyecto específico (p.ej. "5000276"), no el "SEC.FUNC" (que es
+# solo un número de secuencia interno del propio archivo).
+#
+# Formato "por Proyecto" (una sola línea combinada):
+#   "0035  0066 3000001 5000276 GESTION DEL PROGRAMA 22 048 0109"
+#    SEC.FUNC PROD/PRY ACT/AI/OBR  cod.actividad   descripción      FN DVF GRPF
+PROYECTO_LINEA_COMBINADA_RE = re.compile(
+    r"^(\d{4})\s+\d{4}\s+\d+\s+(\d{5,7})\s+(.+?)\s+\d{1,3}\s+\d{1,3}\s+\d{1,4}$"
+)
+
+# Formato "por Programa" (código y descripción en líneas separadas):
+#   "3000001 ACCIONES COMUNES"
+#   "5000276  GESTION DEL PROGRAMA"
+# Se usa el ÚLTIMO código de 7 dígitos visto antes de las filas de datos,
+# que es siempre el más específico (la actividad, no el proyecto genérico).
+PROYECTO_LINEA_SEPARADA_RE = re.compile(r"^(\d{5,7})\s+(.+)$")
+
 ProgressCallback = Callable[[int, str], None]
 
 
@@ -49,9 +71,11 @@ class ExcelImportError(Exception):
 @dataclass
 class ImportResult:
     filas_importadas: int = 0
-    proyectos_detectados: int = 0
+    proyectos_creados: list[str] = field(default_factory=list)
+    proyectos_existentes: list[str] = field(default_factory=list)
     columnas_fusionadas: list[str] = field(default_factory=list)
     filas_encabezado_eliminadas: int = 0
+    clasificadores_no_encontrados: list[str] = field(default_factory=list)
     advertencias: list[str] = field(default_factory=list)
 
 
@@ -153,7 +177,7 @@ class ExcelPresupuestoImporter:
         return df
 
     # ------------------------------------------------------------------
-    # Etapa 2: parseo jerárquico Rubro/Programa/Meta/Categoría/Clasificador
+    # Etapa 2: parseo jerárquico Proyecto/Rubro/Programa/Meta/Categoría/Clasificador
     # ------------------------------------------------------------------
     def _parsear_jerarquia(self, df: pd.DataFrame) -> pd.DataFrame:
         # Reindexar columnas posicionalmente 0..10 tras la limpieza
@@ -161,11 +185,26 @@ class ExcelPresupuestoImporter:
         df.columns = range(df.shape[1])
 
         rubro = programa = meta = categoria = None
+        proyecto_codigo = proyecto_nombre = None
         filas: list[dict] = []
 
         for _, fila in df.iterrows():
             c0 = "" if pd.isna(fila[0]) else str(fila[0]).strip()
             if c0 == "":
+                continue
+
+            # --- Detección de proyecto/actividad (ambos formatos) ---
+            m_combinado = PROYECTO_LINEA_COMBINADA_RE.match(c0)
+            if m_combinado:
+                meta = m_combinado.group(1)
+                proyecto_codigo, proyecto_nombre = m_combinado.group(2), m_combinado.group(3)
+                continue
+
+            m_separado = PROYECTO_LINEA_SEPARADA_RE.match(c0)
+            if m_separado:
+                # El último código de 7 dígitos visto antes de las filas de
+                # datos es siempre el más específico (la actividad real).
+                proyecto_codigo, proyecto_nombre = m_separado.group(1), m_separado.group(2)
                 continue
 
             if c0.startswith("00 "):
@@ -175,7 +214,6 @@ class ExcelPresupuestoImporter:
                 programa = c0
                 continue
             if c0.upper().startswith("META"):
-                meta = c0
                 continue
             if c0 in ("5", "6"):
                 categoria = fila[1]
@@ -186,6 +224,8 @@ class ExcelPresupuestoImporter:
             if c0.startswith("2."):
                 filas.append(
                     {
+                        "proyecto_codigo": proyecto_codigo,
+                        "proyecto_nombre": proyecto_nombre,
                         "rubro": rubro,
                         "programa": programa,
                         "meta": meta,
@@ -207,20 +247,23 @@ class ExcelPresupuestoImporter:
         return pd.DataFrame(filas)
 
     # ------------------------------------------------------------------
-    # Etapa 3: persistencia en BD (asociada a un Proyecto)
+    # Etapa 3: persistencia en BD (un Proyecto por cada actividad detectada)
     # ------------------------------------------------------------------
     def importar(
         self,
         ruta_archivo: str | Path,
         session: Session,
-        proyecto_codigo: str,
+        proyecto_codigo: Optional[str] = None,
         proyecto_nombre: Optional[str] = None,
         progress_cb: Optional[ProgressCallback] = None,
     ) -> ImportResult:
         """Importa el archivo completo y devuelve un resumen.
 
-        Crea el Proyecto si no existe (por `proyecto_codigo`) y agrega
-        las filas de presupuesto asociadas.
+        Los proyectos se detectan y crean AUTOMÁTICAMENTE a partir de las
+        líneas de actividad/proyecto del propio reporte (no requiere que el
+        usuario tipee un código). `proyecto_codigo`/`proyecto_nombre` solo
+        se usan como respaldo para las filas de un reporte antiguo/atípico
+        donde no se pudo detectar ningún proyecto.
         """
         ruta = Path(ruta_archivo)
         if not ruta.exists():
@@ -236,7 +279,7 @@ class ExcelPresupuestoImporter:
         _progreso(10, "Leyendo archivo y limpiando estructura...")
         df_limpio = self._limpiar_estructura(ruta, resultado)
 
-        _progreso(50, "Parseando jerarquía presupuestal...")
+        _progreso(40, "Detectando proyectos y parseando jerarquía presupuestal...")
         df_final = self._parsear_jerarquia(df_limpio)
 
         if df_final.empty:
@@ -245,6 +288,18 @@ class ExcelPresupuestoImporter:
                 "en el archivo."
             )
 
+        sin_proyecto = df_final["proyecto_codigo"].isna()
+        if sin_proyecto.any():
+            if not proyecto_codigo:
+                raise ExcelImportError(
+                    f"{int(sin_proyecto.sum())} fila(s) no pudieron asociarse a ningún "
+                    "proyecto (no se reconoció el formato de línea de proyecto/actividad "
+                    "del reporte). Indique un código de proyecto de respaldo para "
+                    "continuar, o revise que el archivo sea un reporte SIAF válido."
+                )
+            df_final.loc[sin_proyecto, "proyecto_codigo"] = proyecto_codigo
+            df_final.loc[sin_proyecto, "proyecto_nombre"] = proyecto_nombre or proyecto_codigo
+
         for col in (
             "pia", "pim", "certificacion", "compromiso", "devengado",
             "saldo_certificacion", "saldo_compromiso", "saldo_devengado",
@@ -252,21 +307,40 @@ class ExcelPresupuestoImporter:
         ):
             df_final[col] = pd.to_numeric(df_final[col], errors="coerce").fillna(0.0)
 
-        _progreso(70, "Registrando proyecto...")
-        proyecto = session.query(Proyecto).filter_by(codigo=proyecto_codigo).one_or_none()
-        if proyecto is None:
-            proyecto = Proyecto(
-                codigo=proyecto_codigo,
-                nombre=proyecto_nombre or proyecto_codigo,
-                programa=str(df_final.iloc[0]["programa"]) if not df_final.empty else None,
-                meta=str(df_final.iloc[0]["meta"]) if not df_final.empty else None,
-            )
-            session.add(proyecto)
-            session.flush()  # obtiene proyecto.id sin cerrar la transacción
-            resultado.proyectos_detectados += 1
+        _progreso(60, "Registrando proyectos detectados...")
+        # get-or-create de cada proyecto único encontrado en el archivo.
+        proyectos_cache: dict[str, Proyecto] = {}
+        for codigo, nombre in (
+            df_final[["proyecto_codigo", "proyecto_nombre"]]
+            .drop_duplicates()
+            .itertuples(index=False)
+        ):
+            proyecto = session.query(Proyecto).filter_by(codigo=codigo).one_or_none()
+            if proyecto is None:
+                proyecto = Proyecto(codigo=codigo, nombre=nombre or codigo)
+                session.add(proyecto)
+                session.flush()  # obtiene proyecto.id sin cerrar la transacción
+                resultado.proyectos_creados.append(codigo)
+            else:
+                resultado.proyectos_existentes.append(codigo)
+            proyectos_cache[codigo] = proyecto
 
         _progreso(85, "Insertando partidas presupuestales...")
         for _, fila in df_final.iterrows():
+            codigo_original = str(fila["clasificador"]) if fila["clasificador"] is not None else None
+            codigo_norm = normalizar_codigo(codigo_original) if codigo_original else None
+
+            clasificador_catalogo = None
+            descripcion_final = fila["descripcion"]
+            if codigo_norm:
+                clasificador_catalogo = ClasificadorService.buscar(session, self.anio, codigo_norm)
+                if clasificador_catalogo is not None:
+                    # El catálogo oficial es la fuente de verdad para la descripción.
+                    descripcion_final = clasificador_catalogo.descripcion
+                else:
+                    resultado.clasificadores_no_encontrados.append(codigo_norm)
+
+            proyecto = proyectos_cache[fila["proyecto_codigo"]]
             registro = Presupuesto(
                 proyecto_id=proyecto.id,
                 anio=self.anio,
@@ -275,8 +349,10 @@ class ExcelPresupuestoImporter:
                 programa=fila["programa"],
                 meta=fila["meta"],
                 categoria=str(fila["categoria"]) if fila["categoria"] is not None else None,
-                clasificador=fila["clasificador"],
-                descripcion=fila["descripcion"],
+                clasificador=codigo_norm,
+                clasificador_original=codigo_original,
+                clasificador_id=clasificador_catalogo.id if clasificador_catalogo else None,
+                descripcion=descripcion_final,
                 pia=float(fila["pia"]),
                 pim=float(fila["pim"]),
                 certificacion=float(fila["certificacion"]),
@@ -289,6 +365,15 @@ class ExcelPresupuestoImporter:
                 archivo_origen=ruta.name,
             )
             session.add(registro)
+
+        if resultado.clasificadores_no_encontrados:
+            no_encontrados_unicos = sorted(set(resultado.clasificadores_no_encontrados))
+            resultado.advertencias.append(
+                f"{len(no_encontrados_unicos)} clasificador(es) no encontrados en el catálogo "
+                f"para el año {self.anio} (se guardó la descripción tal cual venía en el reporte): "
+                + ", ".join(no_encontrados_unicos[:10])
+                + ("..." if len(no_encontrados_unicos) > 10 else "")
+            )
 
         resultado.filas_importadas = len(df_final)
         _progreso(100, "Importación completada.")
