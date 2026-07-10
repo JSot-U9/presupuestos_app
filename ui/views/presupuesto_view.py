@@ -64,32 +64,50 @@ class PresupuestoView(QWidget):
         header.addWidget(btn_exportar)
         layout.addLayout(header)
 
-        filtros = QHBoxLayout()
+        # Fila 1: Filtros principales (Meta, Programa, Función, Rubro)
+        filtros1 = QHBoxLayout()
+        filtros1.setSpacing(12)
+        
+        filtros1.addWidget(QLabel("🔍 Filtros:"))
+        
+        # Meta (prioritario)
         self.combo_meta = QComboBox()
-        self.combo_meta.setFixedWidth(120)
+        self.combo_meta.setFixedWidth(140)
         self.combo_meta.currentIndexChanged.connect(self.cargar_datos)
-        filtros.addWidget(QLabel("Meta:"))
-        filtros.addWidget(self.combo_meta)
+        filtros1.addWidget(QLabel("Meta:"))
+        filtros1.addWidget(self.combo_meta)
 
         self.combo_programa = QComboBox()
         self.combo_programa.setFixedWidth(120)
         self.combo_programa.currentIndexChanged.connect(self.cargar_datos)
-        filtros.addWidget(QLabel("Programa:"))
-        filtros.addWidget(self.combo_programa)
+        filtros1.addWidget(QLabel("Programa:"))
+        filtros1.addWidget(self.combo_programa)
 
         self.combo_funcion = QComboBox()
         self.combo_funcion.setFixedWidth(100)
         self.combo_funcion.currentIndexChanged.connect(self.cargar_datos)
-        filtros.addWidget(QLabel("Función:"))
-        filtros.addWidget(self.combo_funcion)
+        filtros1.addWidget(QLabel("Función:"))
+        filtros1.addWidget(self.combo_funcion)
 
         self.combo_rubro = QComboBox()
-        self.combo_rubro.setFixedWidth(220)
+        self.combo_rubro.setFixedWidth(200)
         self.combo_rubro.currentIndexChanged.connect(self.cargar_datos)
-        filtros.addWidget(QLabel("Rubro:"))
-        filtros.addWidget(self.combo_rubro)
-        filtros.addStretch()
-        layout.addLayout(filtros)
+        filtros1.addWidget(QLabel("Rubro:"))
+        filtros1.addWidget(self.combo_rubro)
+
+        btn_limpiar = QPushButton("🔄 Limpiar Filtros")
+        btn_limpiar.setFixedWidth(130)
+        btn_limpiar.clicked.connect(self._limpiar_filtros)
+        filtros1.addWidget(btn_limpiar)
+
+        filtros1.addStretch()
+        
+        # Indicador de filtros activos
+        self.label_filtros_activos = QLabel()
+        self.label_filtros_activos.setStyleSheet("color: #ff7700; font-weight: 600;")
+        filtros1.addWidget(self.label_filtros_activos)
+        
+        layout.addLayout(filtros1)
 
         self.tabla = QTableWidget(0, len(COLUMNAS))
         self.tabla.setHorizontalHeaderLabels(COLUMNAS)
@@ -114,6 +132,16 @@ class PresupuestoView(QWidget):
         self.combo_proyecto.blockSignals(False)
 
     def _on_filtro_cambiado(self) -> None:
+        self.cargar_datos()
+
+    def _limpiar_filtros(self) -> None:
+        """Limpia todos los filtros y muestra todos los registros."""
+        self.combo_proyecto.setCurrentIndex(0)
+        self.combo_meta.setCurrentIndex(0)
+        self.combo_programa.setCurrentIndex(0)
+        self.combo_funcion.setCurrentIndex(0)
+        self.combo_rubro.setCurrentIndex(0)
+        self.input_busqueda.clear()
         self.cargar_datos()
 
     def _refrescar_filtros(self) -> None:
@@ -196,6 +224,32 @@ class PresupuestoView(QWidget):
             ]
             for col, valor in enumerate(valores):
                 self.tabla.setItem(fila, col, QTableWidgetItem(valor))
+
+        # Actualizar indicador de filtros activos
+        self._actualizar_indicador_filtros(len(registros))
+
+    def _actualizar_indicador_filtros(self, total_registros: int) -> None:
+        """Actualiza el indicador visual de filtros activos."""
+        filtros_activos = []
+        
+        if self.combo_meta.currentData() is not None:
+            filtros_activos.append(f"Meta: {self.combo_meta.currentText()}")
+        if self.combo_programa.currentData() is not None:
+            filtros_activos.append(f"Programa: {self.combo_programa.currentText()}")
+        if self.combo_funcion.currentData() is not None:
+            filtros_activos.append(f"Función: {self.combo_funcion.currentText()}")
+        if self.combo_rubro.currentData() is not None:
+            filtros_activos.append(f"Rubro: {self.combo_rubro.currentText()[:20]}")
+        if self.input_busqueda.text().strip():
+            filtros_activos.append(f"Búsqueda: '{self.input_busqueda.text()}'")
+
+        if filtros_activos:
+            texto = "  |  ".join(filtros_activos) + f"  →  {total_registros} registro(s)"
+            self.label_filtros_activos.setText(texto)
+            self.label_filtros_activos.setStyleSheet("color: #ff7700; font-weight: 600;")
+        else:
+            self.label_filtros_activos.setText(f"Mostrando {total_registros} registro(s)")
+            self.label_filtros_activos.setStyleSheet("color: #666; font-weight: 500;")
 
     def _mostrar_detalles(self) -> None:
         """Muestra un diálogo con todos los detalles del presupuesto seleccionado."""
