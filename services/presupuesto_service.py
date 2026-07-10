@@ -16,12 +16,18 @@ class PresupuestoService:
         proyecto_id: Optional[int] = None,
         anio: Optional[int] = None,
         texto_busqueda: str = "",
+        meta: Optional[str] = None,
+        rubro: Optional[str] = None,
     ) -> list[Presupuesto]:
         query = session.query(Presupuesto)
         if proyecto_id:
             query = query.filter(Presupuesto.proyecto_id == proyecto_id)
         if anio:
             query = query.filter(Presupuesto.anio == anio)
+        if meta:
+            query = query.filter(Presupuesto.meta == meta)
+        if rubro:
+            query = query.filter(Presupuesto.rubro == rubro)
         if texto_busqueda:
             like = f"%{texto_busqueda.strip()}%"
             query = query.filter(

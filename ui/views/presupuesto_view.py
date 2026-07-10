@@ -48,19 +48,34 @@ class PresupuestoView(QWidget):
 
         self.combo_proyecto = QComboBox()
         self.combo_proyecto.setFixedWidth(220)
-        self.combo_proyecto.currentIndexChanged.connect(self.cargar_datos)
+        self.combo_proyecto.currentIndexChanged.connect(self._on_filtro_cambiado)
         header.addWidget(self.combo_proyecto)
 
         self.input_busqueda = QLineEdit()
         self.input_busqueda.setPlaceholderText("Buscar clasificador o descripción...")
         self.input_busqueda.setFixedWidth(260)
-        self.input_busqueda.textChanged.connect(self.cargar_datos)
+        self.input_busqueda.textChanged.connect(self._on_filtro_cambiado)
         header.addWidget(self.input_busqueda)
 
         btn_exportar = QPushButton("Exportar a Excel")
         btn_exportar.clicked.connect(self._exportar_excel)
         header.addWidget(btn_exportar)
         layout.addLayout(header)
+
+        filtros = QHBoxLayout()
+        self.combo_meta = QComboBox()
+        self.combo_meta.setFixedWidth(160)
+        self.combo_meta.currentIndexChanged.connect(self.cargar_datos)
+        filtros.addWidget(QLabel("Meta:"))
+        filtros.addWidget(self.combo_meta)
+
+        self.combo_rubro = QComboBox()
+        self.combo_rubro.setFixedWidth(280)
+        self.combo_rubro.currentIndexChanged.connect(self.cargar_datos)
+        filtros.addWidget(QLabel("Rubro:"))
+        filtros.addWidget(self.combo_rubro)
+        filtros.addStretch()
+        layout.addLayout(filtros)
 
         self.tabla = QTableWidget(0, len(COLUMNAS))
         self.tabla.setHorizontalHeaderLabels(COLUMNAS)
@@ -83,12 +98,42 @@ class PresupuestoView(QWidget):
         self.combo_proyecto.setCurrentIndex(idx if idx >= 0 else 0)
         self.combo_proyecto.blockSignals(False)
 
+    def _on_filtro_cambiado(self) -> None:
+        self.cargar_datos()
+
+    def _refrescar_filtros(self) -> None:
+        proyecto_id = self._proyecto_id_actual()
+        meta_actual = self.combo_meta.currentData()
+        rubro_actual = self.combo_rubro.currentData()
+
+        self.combo_meta.blockSignals(True)
+        self.combo_meta.clear()
+        self.combo_meta.addItem("Todas las metas", None)
+        for m in PresupuestoController.listar_metas():
+            self.combo_meta.addItem(m, m)
+        idx = self.combo_meta.findData(meta_actual)
+        self.combo_meta.setCurrentIndex(idx if idx >= 0 else 0)
+        self.combo_meta.blockSignals(False)
+
+        self.combo_rubro.blockSignals(True)
+        self.combo_rubro.clear()
+        self.combo_rubro.addItem("Todos los rubros", None)
+        for r in PresupuestoController.listar_rubros(proyecto_id):
+            self.combo_rubro.addItem(r, r)
+        idx = self.combo_rubro.findData(rubro_actual)
+        if idx >= 0:
+            self.combo_rubro.setCurrentIndex(idx)
+        self.combo_rubro.blockSignals(False)
+
     def cargar_datos(self) -> None:
         self._refrescar_combo_proyectos()
+        self._refrescar_filtros()
         try:
             registros = PresupuestoController.listar(
                 proyecto_id=self._proyecto_id_actual(),
                 texto_busqueda=self.input_busqueda.text(),
+                meta=self.combo_meta.currentData(),
+                rubro=self.combo_rubro.currentData(),
             )
         except Exception:  # noqa: BLE001
             logger.exception("Error listando presupuesto")
