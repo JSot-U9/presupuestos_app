@@ -34,7 +34,7 @@ def exportar_presupuesto_excel(registros: list[Presupuesto], destino: str | Path
             "Saldo_Certificacion": r.saldo_certificacion,
             "Saldo_Compromiso": r.saldo_compromiso,
             "Saldo_Devengado": r.saldo_devengado,
-            "% Avance": r.porcentaje_avance,
+            "% Avance": r.porcentaje_avance * 100,
         }
         for r in registros
     ]

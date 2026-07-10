@@ -69,7 +69,7 @@ class PresupuestoDetailDialog(QDialog):
         form.addRow(QLabel("Compromiso:"), QLabel(f"{self.presupuesto.compromiso:,.2f}"))
         form.addRow(QLabel("Devengado:"), QLabel(f"{self.presupuesto.devengado:,.2f}"))
         form.addRow(QLabel("Saldo Devengado:"), QLabel(f"{self.presupuesto.saldo_devengado:,.2f}"))
-        form.addRow(QLabel("% Avance:"), QLabel(f"{self.presupuesto.porcentaje_avance:.2f}%"))
+        form.addRow(QLabel("% Avance:"), QLabel(f"{self.presupuesto.porcentaje_avance * 100:.2f}%"))
 
         # Información de importación
         form.addRow(QLabel("<b>AUDITORIA</b>"), QLabel(""))

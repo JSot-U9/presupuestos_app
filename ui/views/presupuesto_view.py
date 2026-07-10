@@ -222,7 +222,7 @@ class PresupuestoView(QWidget):
                 f"{r.pim:,.2f}",
                 f"{r.certificacion:,.2f}",
                 f"{r.devengado:,.2f}",
-                f"{r.porcentaje_avance:.2f}%",
+                f"{r.porcentaje_avance * 100:.2f}%",
             ]
             for col, valor in enumerate(valores):
                 self.tabla.setItem(fila, col, QTableWidgetItem(valor))
