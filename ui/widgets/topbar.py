@@ -21,12 +21,12 @@ class TopBar(QWidget):
         layout.addStretch()
 
         usuario_label = QLabel(f"{nombre_usuario}  ·  {rol}")
-        usuario_label.setStyleSheet("color: white;")
+        usuario_label.setStyleSheet("color: #1F4E79;")
         layout.addWidget(usuario_label)
 
         self.btn_salir = QPushButton("Cerrar sesión")
         self.btn_salir.setObjectName("SecondaryButton")
         self.btn_salir.setStyleSheet(
-            "background-color: transparent; color: white; border: 1px solid white;"
+            "background-color: transparent; color: #1F4E79; border: 1px solid #1F4E79;"
         )
         layout.addWidget(self.btn_salir)

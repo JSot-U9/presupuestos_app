@@ -102,7 +102,7 @@ def listar_actividades(proyecto_id: Optional[int] = None) -> list[str]:
    - **Rubro**: Mantiene filtrado por rubro de financiamiento
 
 ### Notas
-- Los cambios son **retrocompatibles** con datos antigos
+- Los cambios son **retrocompatibles** con datos antiguos
 - Campo `categoria` fue reemplazado (deprecado pero mantenido)
 - Todos los filtros funcionan de forma independiente
 - La tabla se puede desplazar horizontalmente para ver todas las columnas
