@@ -17,6 +17,8 @@ class PresupuestoService:
         anio: Optional[int] = None,
         texto_busqueda: str = "",
         meta: Optional[str] = None,
+        programa: Optional[str] = None,
+        funcion: Optional[str] = None,
         rubro: Optional[str] = None,
         categoria: Optional[str] = None,
     ) -> list[Presupuesto]:
@@ -27,6 +29,10 @@ class PresupuestoService:
             query = query.filter(Presupuesto.anio == anio)
         if meta:
             query = query.filter(Presupuesto.meta == meta)
+        if programa:
+            query = query.filter(Presupuesto.programa == programa)
+        if funcion:
+            query = query.filter(Presupuesto.funcion == funcion)
         if rubro:
             query = query.filter(Presupuesto.rubro == rubro)
         if categoria:

@@ -198,6 +198,8 @@ class PresupuestoView(QWidget):
                 proyecto_id=self._proyecto_id_actual(),
                 texto_busqueda=self.input_busqueda.text(),
                 meta=self.combo_meta.currentData(),
+                programa=self.combo_programa.currentData(),
+                funcion=self.combo_funcion.currentData(),
                 rubro=self.combo_rubro.currentData(),
                 categoria=None,  # Categoría deprecada, mantenida para compatibilidad
             )

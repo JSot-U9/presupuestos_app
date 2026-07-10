@@ -20,9 +20,11 @@ class PresupuestoController:
     @staticmethod
     def listar(proyecto_id: Optional[int] = None, anio: Optional[int] = None,
                texto_busqueda: str = "", meta: Optional[str] = None,
+               programa: Optional[str] = None, funcion: Optional[str] = None,
                rubro: Optional[str] = None, categoria: Optional[str] = None) -> list[Presupuesto]:
         with get_session() as session:
-            registros = PresupuestoService.listar(session, proyecto_id, anio, texto_busqueda, meta, rubro, categoria)
+            registros = PresupuestoService.listar(session, proyecto_id, anio, texto_busqueda, 
+                                                   meta, programa, funcion, rubro, categoria)
             for r in registros:
                 _ = r.proyecto.codigo if r.proyecto else None  # fuerza carga antes de expunge
                 session.expunge(r)
@@ -30,11 +32,10 @@ class PresupuestoController:
 
     @staticmethod
     def listar_metas() -> list[str]:
+        """Retorna lista de códigos de meta únicos de la tabla Presupuesto."""
         with get_session() as session:
-            metas = session.query(MetaPresupuesto.nro_meta).order_by(
-                MetaPresupuesto.nro_meta.cast(Integer)
-            ).distinct().all()
-            return [str(m[0]).zfill(4) for m in metas]
+            query = session.query(Presupuesto.meta).distinct().order_by(Presupuesto.meta)
+            return [str(m[0]) for m in query.all() if m[0] is not None]
 
     @staticmethod
     def listar_rubros(proyecto_id: Optional[int] = None) -> list[str]:
