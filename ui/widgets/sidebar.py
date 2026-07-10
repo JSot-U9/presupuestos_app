@@ -9,6 +9,7 @@ MODULOS = [
     ("Proyectos", "proyectos"),
     ("Presupuesto", "presupuesto"),
     ("Importar Excel", "importar"),
+    ("Importar Metas", "importar_meta"),
     ("Reportes", "reportes"),
     ("Configuración", "configuracion"),
 ]
