@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QDialog,
+    QFileDialog,
     QFormLayout,
     QHBoxLayout,
     QHeaderView,
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from config import ROLES
 from controllers.auth_controller import AuthController
+from controllers.clasificador_controller import CatalogoImportError, ClasificadorController
 from utils.logger import get_logger
 from utils.validators import ValidationError
 
@@ -98,6 +100,60 @@ class ConfiguracionView(QWidget):
         )
         nota.setStyleSheet("color: #A19F9D; font-size: 11px;")
         layout.addWidget(nota)
+
+        separador = QLabel("Catálogo de clasificadores (MEF)")
+        separador.setStyleSheet("font-size: 16px; font-weight: 700; margin-top: 12px;")
+        layout.addWidget(separador)
+
+        info_catalogo = QLabel(
+            "Fuente de verdad para validar y completar la descripción de cada "
+            "clasificador de gasto importado desde reportes SIAF (columnas "
+            "esperadas: ANIO, CLASIFICADOR, DESCRIPCION, DESCRIPCION_DETALLADA)."
+        )
+        info_catalogo.setWordWrap(True)
+        info_catalogo.setStyleSheet("color: #605E5C;")
+        layout.addWidget(info_catalogo)
+
+        fila_catalogo = QHBoxLayout()
+        self.lbl_total_clasificadores = QLabel()
+        fila_catalogo.addWidget(self.lbl_total_clasificadores)
+        fila_catalogo.addStretch()
+        btn_importar_catalogo = QPushButton("Importar catálogo de clasificadores")
+        btn_importar_catalogo.clicked.connect(self._importar_catalogo)
+        fila_catalogo.addWidget(btn_importar_catalogo)
+        layout.addLayout(fila_catalogo)
+
+        self._actualizar_total_clasificadores()
+
+    def _actualizar_total_clasificadores(self) -> None:
+        try:
+            total = ClasificadorController.contar()
+        except Exception:  # noqa: BLE001
+            logger.exception("Error contando clasificadores")
+            total = 0
+        self.lbl_total_clasificadores.setText(
+            f"Clasificadores cargados actualmente: {total}"
+        )
+
+    def _importar_catalogo(self) -> None:
+        ruta, _ = QFileDialog.getOpenFileName(
+            self, "Seleccionar catálogo de clasificadores", "", "Excel (*.xlsx *.xls)"
+        )
+        if not ruta:
+            return
+        try:
+            cantidad = ClasificadorController.importar_catalogo(ruta)
+        except CatalogoImportError as exc:
+            QMessageBox.warning(self, "Catálogo inválido", str(exc))
+            return
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Error importando catálogo de clasificadores")
+            QMessageBox.critical(self, "Error", f"No se pudo importar el catálogo: {exc}")
+            return
+        QMessageBox.information(
+            self, "Catálogo importado", f"Se cargaron/actualizaron {cantidad} clasificadores."
+        )
+        self._actualizar_total_clasificadores()
 
     def cargar_usuarios(self) -> None:
         try:

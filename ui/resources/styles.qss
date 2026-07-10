@@ -8,11 +8,11 @@ QMainWindow, QWidget {
 }
 
 #TopBar {
-    background-color: #0b2c4a;
+    background-color: #1F4E79;
 }
 
 #TopBarTitle {
-    color: #1F4E79;
+    color: white;
     font-size: 16px;
     font-weight: 600;
 }

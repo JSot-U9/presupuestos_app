@@ -16,9 +16,9 @@ __all__ = ["PresupuestoController", "ExcelImportError", "ImportResult"]
 class PresupuestoController:
     @staticmethod
     def listar(proyecto_id: Optional[int] = None, anio: Optional[int] = None,
-               texto_busqueda: str = "", meta_codigo: Optional[str] = None) -> list[Presupuesto]:
+               texto_busqueda: str = "") -> list[Presupuesto]:
         with get_session() as session:
-            registros = PresupuestoService.listar(session, proyecto_id, anio, texto_busqueda, meta_codigo)
+            registros = PresupuestoService.listar(session, proyecto_id, anio, texto_busqueda)
             for r in registros:
                 _ = r.proyecto.codigo if r.proyecto else None  # fuerza carga antes de expunge
                 session.expunge(r)
@@ -33,7 +33,7 @@ class PresupuestoController:
     def importar_excel(
         ruta_archivo: str,
         anio: int,
-        proyecto_codigo: str,
+        proyecto_codigo: Optional[str] = None,
         proyecto_nombre: str = "",
         mes: Optional[int] = None,
         progress_cb: Optional[Callable[[int, str], None]] = None,
@@ -45,14 +45,9 @@ class PresupuestoController:
             )
 
     @staticmethod
-    def exportar_excel(destino: str, proyecto_id: Optional[int] = None, meta_codigo: Optional[str] = None) -> Path:
+    def exportar_excel(destino: str, proyecto_id: Optional[int] = None) -> Path:
         with get_session() as session:
-            registros = PresupuestoService.listar(session, proyecto_id=proyecto_id, meta_codigo=meta_codigo)
+            registros = PresupuestoService.listar(session, proyecto_id=proyecto_id)
             for r in registros:
                 _ = r.proyecto.codigo if r.proyecto else None
             return exportar_presupuesto_excel(registros, destino)
-
-    @staticmethod
-    def listar_metas(proyecto_id: Optional[int] = None, anio: Optional[int] = None) -> list[dict]:
-        with get_session() as session:
-            return PresupuestoService.listar_metas(session, proyecto_id=proyecto_id, anio=anio)

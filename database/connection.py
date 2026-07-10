@@ -29,6 +29,7 @@ def init_db() -> None:
     para que queden registrados en Base.metadata."""
     from models import (  # noqa: F401  (import necesario para registrar tablas)
         auditoria,
+        clasificador,
         ejecucion,
         presupuesto,
         proyecto,

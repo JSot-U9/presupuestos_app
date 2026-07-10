@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+data/logs/
+
+# Archivos temporales de Excel
+presupuesto_export.xlsx
+
+# Base de datos (si no debe versionarse)
+data/presupuesto.db
