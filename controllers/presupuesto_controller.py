@@ -20,9 +20,9 @@ class PresupuestoController:
     @staticmethod
     def listar(proyecto_id: Optional[int] = None, anio: Optional[int] = None,
                texto_busqueda: str = "", meta: Optional[str] = None,
-               rubro: Optional[str] = None) -> list[Presupuesto]:
+               rubro: Optional[str] = None, categoria: Optional[str] = None) -> list[Presupuesto]:
         with get_session() as session:
-            registros = PresupuestoService.listar(session, proyecto_id, anio, texto_busqueda, meta, rubro)
+            registros = PresupuestoService.listar(session, proyecto_id, anio, texto_busqueda, meta, rubro, categoria)
             for r in registros:
                 _ = r.proyecto.codigo if r.proyecto else None  # fuerza carga antes de expunge
                 session.expunge(r)
@@ -43,6 +43,14 @@ class PresupuestoController:
             if proyecto_id:
                 query = query.filter(Presupuesto.proyecto_id == proyecto_id)
             return [str(r[0]) for r in query.all() if r[0] is not None]
+
+    @staticmethod
+    def listar_categorias(proyecto_id: Optional[int] = None) -> list[str]:
+        with get_session() as session:
+            query = session.query(Presupuesto.categoria).distinct().order_by(Presupuesto.categoria)
+            if proyecto_id:
+                query = query.filter(Presupuesto.proyecto_id == proyecto_id)
+            return [str(c[0]) for c in query.all() if c[0] is not None]
 
     @staticmethod
     def eliminar(presupuesto_id: int) -> None:

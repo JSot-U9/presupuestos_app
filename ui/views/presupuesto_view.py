@@ -74,6 +74,12 @@ class PresupuestoView(QWidget):
         self.combo_rubro.currentIndexChanged.connect(self.cargar_datos)
         filtros.addWidget(QLabel("Rubro:"))
         filtros.addWidget(self.combo_rubro)
+
+        self.combo_categoria = QComboBox()
+        self.combo_categoria.setFixedWidth(100)
+        self.combo_categoria.currentIndexChanged.connect(self.cargar_datos)
+        filtros.addWidget(QLabel("Categoría:"))
+        filtros.addWidget(self.combo_categoria)
         filtros.addStretch()
         layout.addLayout(filtros)
 
@@ -105,6 +111,7 @@ class PresupuestoView(QWidget):
         proyecto_id = self._proyecto_id_actual()
         meta_actual = self.combo_meta.currentData()
         rubro_actual = self.combo_rubro.currentData()
+        categoria_actual = self.combo_categoria.currentData()
 
         self.combo_meta.blockSignals(True)
         self.combo_meta.clear()
@@ -125,6 +132,16 @@ class PresupuestoView(QWidget):
             self.combo_rubro.setCurrentIndex(idx)
         self.combo_rubro.blockSignals(False)
 
+        self.combo_categoria.blockSignals(True)
+        self.combo_categoria.clear()
+        self.combo_categoria.addItem("Todas las categorías", None)
+        for c in PresupuestoController.listar_categorias(proyecto_id):
+            self.combo_categoria.addItem(c, c)
+        idx = self.combo_categoria.findData(categoria_actual)
+        if idx >= 0:
+            self.combo_categoria.setCurrentIndex(idx)
+        self.combo_categoria.blockSignals(False)
+
     def cargar_datos(self) -> None:
         self._refrescar_combo_proyectos()
         self._refrescar_filtros()
@@ -134,6 +151,7 @@ class PresupuestoView(QWidget):
                 texto_busqueda=self.input_busqueda.text(),
                 meta=self.combo_meta.currentData(),
                 rubro=self.combo_rubro.currentData(),
+                categoria=self.combo_categoria.currentData(),
             )
         except Exception:  # noqa: BLE001
             logger.exception("Error listando presupuesto")
