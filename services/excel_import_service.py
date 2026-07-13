@@ -189,6 +189,7 @@ class ExcelPresupuestoImporter:
         rubro = None
         meta = programa = producto = actividad_codigo = actividad_descripcion = None
         funcion = division_funcional = grupo_funcional = None
+        clasi_presu = None
         proyecto_codigo = proyecto_nombre = None
         filas: list[dict] = []
 
@@ -229,7 +230,8 @@ class ExcelPresupuestoImporter:
             if c0.upper().startswith("META"):
                 continue
             if c0 in ("5", "6"):
-                continue  # Ignora categoría (prescindible en la nueva estructura)
+                clasi_presu = c0
+                continue
             if c0.upper().startswith("TOTAL"):
                 continue
 
@@ -247,7 +249,8 @@ class ExcelPresupuestoImporter:
                         "funcion": funcion,
                         "division_funcional": division_funcional,
                         "grupo_funcional": grupo_funcional,
-                        "categoria": None,  # Deprecated, pero se mantiene para compatibilidad
+                        "categoria": None,
+                        "clasi_presu": clasi_presu,
                         "clasificador": c0,
                         "descripcion": fila[1],
                         "pia": fila[2],
@@ -372,7 +375,8 @@ class ExcelPresupuestoImporter:
                 funcion=fila["funcion"],
                 division_funcional=fila["division_funcional"],
                 grupo_funcional=fila["grupo_funcional"],
-                categoria=None,  # Deprecated
+                categoria=None,
+                clasi_presu=fila["clasi_presu"],
                 clasificador=codigo_norm,
                 clasificador_original=codigo_original,
                 clasificador_id=clasificador_catalogo.id if clasificador_catalogo else None,

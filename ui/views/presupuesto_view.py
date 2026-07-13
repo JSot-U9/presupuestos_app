@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 
 COLUMNAS = [
     "Proyecto", "Rubro", "Meta", "Programa", "Producto", "Actividad / AI / Obra", 
-    "Clasificador de gasto", "Descripción", "Función", "División Funcional", "Grupo Funcional",
+    "Clasif. Presu.", "Clasificador de gasto", "Descripción", "Función", "División Funcional", "Grupo Funcional",
     "PIM", "Certificado", "Devengado", "% Avance",
 ]
 
@@ -120,6 +120,12 @@ class PresupuestoView(QWidget):
         filtros1.addWidget(QLabel("Rubro:"))
         filtros1.addWidget(self.combo_rubro)
 
+        self.combo_clasi_presu = QComboBox()
+        self.combo_clasi_presu.setFixedWidth(100)
+        self.combo_clasi_presu.currentIndexChanged.connect(self.cargar_datos)
+        filtros1.addWidget(QLabel("Clasif. Presu.:"))
+        filtros1.addWidget(self.combo_clasi_presu)
+
         btn_limpiar = QPushButton("🔄 Limpiar Filtros")
         btn_limpiar.setFixedWidth(130)
         btn_limpiar.clicked.connect(self._limpiar_filtros)
@@ -175,6 +181,7 @@ class PresupuestoView(QWidget):
         self.combo_division_funcional.setCurrentIndex(0)
         self.combo_grupo_funcional.setCurrentIndex(0)
         self.combo_rubro.setCurrentIndex(0)
+        self.combo_clasi_presu.setCurrentIndex(0)
         self.input_busqueda.clear()
         self.cargar_datos()
 
@@ -188,6 +195,7 @@ class PresupuestoView(QWidget):
         division_actual = self.combo_division_funcional.currentData()
         grupo_actual = self.combo_grupo_funcional.currentData()
         rubro_actual = self.combo_rubro.currentData()
+        clasi_presu_actual = self.combo_clasi_presu.currentData()
 
         self.combo_meta.blockSignals(True)
         self.combo_meta.clear()
@@ -268,6 +276,16 @@ class PresupuestoView(QWidget):
             self.combo_rubro.setCurrentIndex(idx)
         self.combo_rubro.blockSignals(False)
 
+        self.combo_clasi_presu.blockSignals(True)
+        self.combo_clasi_presu.clear()
+        self.combo_clasi_presu.addItem("Todas", None)
+        for c in PresupuestoController.listar_clasi_presu(proyecto_id):
+            self.combo_clasi_presu.addItem(c, c)
+        idx = self.combo_clasi_presu.findData(clasi_presu_actual)
+        if idx >= 0:
+            self.combo_clasi_presu.setCurrentIndex(idx)
+        self.combo_clasi_presu.blockSignals(False)
+
     def cargar_datos(self) -> None:
         self._refrescar_combo_proyectos()
         self._refrescar_filtros()
@@ -283,7 +301,8 @@ class PresupuestoView(QWidget):
                 division_funcional=self.combo_division_funcional.currentData(),
                 grupo_funcional=self.combo_grupo_funcional.currentData(),
                 rubro=self.combo_rubro.currentData(),
-                categoria=None,  # Categoría deprecada, mantenida para compatibilidad
+                categoria=None,
+                clasi_presu=self.combo_clasi_presu.currentData(),
             )
         except Exception:  # noqa: BLE001
             logger.exception("Error listando presupuesto")
@@ -299,6 +318,7 @@ class PresupuestoView(QWidget):
                 r.programa or "-",
                 r.producto or "-",
                 r.actividad_codigo or "-",
+                r.clasi_presu or "-",
                 r.clasificador or "-",
                 r.descripcion or "-",
                 r.funcion or "-",
@@ -336,6 +356,8 @@ class PresupuestoView(QWidget):
             filtros_activos.append(f"Grupo Func.: {self.combo_grupo_funcional.currentText()}")
         if self.combo_rubro.currentData() is not None:
             filtros_activos.append(f"Rubro: {self.combo_rubro.currentText()[:20]}")
+        if self.combo_clasi_presu.currentData() is not None:
+            filtros_activos.append(f"Clasif. Presu.: {self.combo_clasi_presu.currentText()}")
         if self.input_busqueda.text().strip():
             filtros_activos.append(f"Búsqueda: '{self.input_busqueda.text()}'")
 

@@ -48,6 +48,9 @@ class Presupuesto(Base):
     # Categoría heredada (se mantiene por compatibilidad)
     categoria: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
+    # Clasificación presupuestaria (categoría del reporte SIAF: 5, 6, etc.)
+    clasi_presu: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+
     # `clasificador` guarda el código YA NORMALIZADO (sin espacios), que es
     # el que se usa para cruzar con el catálogo oficial (Clasificador).
     # `clasificador_original` conserva el texto tal cual vino del reporte

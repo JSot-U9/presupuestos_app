@@ -23,7 +23,8 @@ class PresupuestoController:
                programa: Optional[str] = None, producto: Optional[str] = None,
                actividad_codigo: Optional[str] = None, funcion: Optional[str] = None,
                division_funcional: Optional[str] = None, grupo_funcional: Optional[str] = None,
-               rubro: Optional[str] = None, categoria: Optional[str] = None) -> list[Presupuesto]:
+               rubro: Optional[str] = None, categoria: Optional[str] = None,
+               clasi_presu: Optional[str] = None) -> list[Presupuesto]:
         with get_session() as session:
             registros = PresupuestoService.listar(
                 session,
@@ -39,6 +40,7 @@ class PresupuestoController:
                 grupo_funcional,
                 rubro,
                 categoria,
+                clasi_presu,
             )
             for r in registros:
                 _ = r.proyecto.codigo if r.proyecto else None  # fuerza carga antes de expunge
@@ -64,6 +66,15 @@ class PresupuestoController:
     def listar_categorias(proyecto_id: Optional[int] = None) -> list[str]:
         with get_session() as session:
             query = session.query(Presupuesto.categoria).distinct().order_by(Presupuesto.categoria)
+            if proyecto_id:
+                query = query.filter(Presupuesto.proyecto_id == proyecto_id)
+            return [str(c[0]) for c in query.all() if c[0] is not None]
+
+    @staticmethod
+    def listar_clasi_presu(proyecto_id: Optional[int] = None) -> list[str]:
+        """Retorna lista de clasificaciones presupuestarias únicas."""
+        with get_session() as session:
+            query = session.query(Presupuesto.clasi_presu).distinct().order_by(Presupuesto.clasi_presu)
             if proyecto_id:
                 query = query.filter(Presupuesto.proyecto_id == proyecto_id)
             return [str(c[0]) for c in query.all() if c[0] is not None]

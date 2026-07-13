@@ -51,6 +51,9 @@ class PresupuestoDetailDialog(QDialog):
         form.addRow(QLabel("División Funcional (048):"), QLabel(self.presupuesto.division_funcional or "-"))
         form.addRow(QLabel("Grupo Funcional (0109):"), QLabel(self.presupuesto.grupo_funcional or "-"))
 
+        # Clasificación presupuestaria
+        form.addRow(QLabel("Clasificación Presupuestaria:"), QLabel(self.presupuesto.clasi_presu or "-"))
+
         # Clasificador de gasto
         form.addRow(QLabel("<b>CLASIFICADOR DE GASTO</b>"), QLabel(""))
         form.addRow(QLabel("Código (normalizado):"), QLabel(self.presupuesto.clasificador or "-"))

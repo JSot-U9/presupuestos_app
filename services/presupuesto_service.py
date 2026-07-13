@@ -25,6 +25,7 @@ class PresupuestoService:
         grupo_funcional: Optional[str] = None,
         rubro: Optional[str] = None,
         categoria: Optional[str] = None,
+        clasi_presu: Optional[str] = None,
     ) -> list[Presupuesto]:
         query = session.query(Presupuesto)
         if proyecto_id:
@@ -49,6 +50,8 @@ class PresupuestoService:
             query = query.filter(Presupuesto.rubro == rubro)
         if categoria:
             query = query.filter(Presupuesto.categoria == categoria)
+        if clasi_presu:
+            query = query.filter(Presupuesto.clasi_presu == clasi_presu)
         if texto_busqueda:
             like = f"%{texto_busqueda.strip()}%"
             query = query.filter(
