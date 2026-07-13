@@ -42,12 +42,11 @@ class PresupuestoDetailDialog(QDialog):
 
         # Actividad/AI/Obra
         form.addRow(QLabel("<b>ACTIVIDAD / AI / OBRA</b>"), QLabel(""))
-        form.addRow(QLabel("Código (5000276):"), QLabel(self.presupuesto.actividad_codigo or "-"))
+        form.addRow(QLabel("Actividad / AI / Obra (código):"), QLabel(self.presupuesto.actividad_codigo or "-"))
         actividad_desc = self.presupuesto.actividad_descripcion or "-"
-        form.addRow(QLabel("Descripción:"), QLabel(actividad_desc))
+        form.addRow(QLabel("Descripción de actividad:"), QLabel(actividad_desc))
 
         # Clasificadores funcionales (MEF)
-        form.addRow(QLabel("<b>CLASIFICADORES FUNCIONALES (MEF)</b>"), QLabel(""))
         form.addRow(QLabel("Función (22):"), QLabel(self.presupuesto.funcion or "-"))
         form.addRow(QLabel("División Funcional (048):"), QLabel(self.presupuesto.division_funcional or "-"))
         form.addRow(QLabel("Grupo Funcional (0109):"), QLabel(self.presupuesto.grupo_funcional or "-"))

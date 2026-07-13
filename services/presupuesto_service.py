@@ -18,7 +18,11 @@ class PresupuestoService:
         texto_busqueda: str = "",
         meta: Optional[str] = None,
         programa: Optional[str] = None,
+        producto: Optional[str] = None,
+        actividad_codigo: Optional[str] = None,
         funcion: Optional[str] = None,
+        division_funcional: Optional[str] = None,
+        grupo_funcional: Optional[str] = None,
         rubro: Optional[str] = None,
         categoria: Optional[str] = None,
     ) -> list[Presupuesto]:
@@ -31,8 +35,16 @@ class PresupuestoService:
             query = query.filter(Presupuesto.meta == meta)
         if programa:
             query = query.filter(Presupuesto.programa == programa)
+        if producto:
+            query = query.filter(Presupuesto.producto == producto)
+        if actividad_codigo:
+            query = query.filter(Presupuesto.actividad_codigo == actividad_codigo)
         if funcion:
             query = query.filter(Presupuesto.funcion == funcion)
+        if division_funcional:
+            query = query.filter(Presupuesto.division_funcional == division_funcional)
+        if grupo_funcional:
+            query = query.filter(Presupuesto.grupo_funcional == grupo_funcional)
         if rubro:
             query = query.filter(Presupuesto.rubro == rubro)
         if categoria:

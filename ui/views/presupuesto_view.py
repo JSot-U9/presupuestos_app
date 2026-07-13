@@ -25,8 +25,9 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 COLUMNAS = [
-    "Proyecto", "Meta", "Programa", "Producto", "Actividad", "Clasificador", 
-    "Descripción", "Función", "PIM", "Certificado", "Devengado", "% Avance",
+    "Proyecto", "Rubro", "Meta", "Programa", "Producto", "Actividad / AI / Obra", 
+    "Clasificador de gasto", "Descripción", "Función", "División Funcional", "Grupo Funcional",
+    "PIM", "Certificado", "Devengado", "% Avance",
 ]
 
 
@@ -83,11 +84,35 @@ class PresupuestoView(QWidget):
         filtros1.addWidget(QLabel("Programa:"))
         filtros1.addWidget(self.combo_programa)
 
+        self.combo_producto = QComboBox()
+        self.combo_producto.setFixedWidth(140)
+        self.combo_producto.currentIndexChanged.connect(self.cargar_datos)
+        filtros1.addWidget(QLabel("Producto:"))
+        filtros1.addWidget(self.combo_producto)
+
+        self.combo_actividad = QComboBox()
+        self.combo_actividad.setFixedWidth(140)
+        self.combo_actividad.currentIndexChanged.connect(self.cargar_datos)
+        filtros1.addWidget(QLabel("Act/AI/Obra:"))
+        filtros1.addWidget(self.combo_actividad)
+
         self.combo_funcion = QComboBox()
         self.combo_funcion.setFixedWidth(100)
         self.combo_funcion.currentIndexChanged.connect(self.cargar_datos)
         filtros1.addWidget(QLabel("Función:"))
         filtros1.addWidget(self.combo_funcion)
+
+        self.combo_division_funcional = QComboBox()
+        self.combo_division_funcional.setFixedWidth(120)
+        self.combo_division_funcional.currentIndexChanged.connect(self.cargar_datos)
+        filtros1.addWidget(QLabel("División Funcional:"))
+        filtros1.addWidget(self.combo_division_funcional)
+
+        self.combo_grupo_funcional = QComboBox()
+        self.combo_grupo_funcional.setFixedWidth(120)
+        self.combo_grupo_funcional.currentIndexChanged.connect(self.cargar_datos)
+        filtros1.addWidget(QLabel("Grupo Funcional:"))
+        filtros1.addWidget(self.combo_grupo_funcional)
 
         self.combo_rubro = QComboBox()
         self.combo_rubro.setFixedWidth(200)
@@ -113,9 +138,14 @@ class PresupuestoView(QWidget):
         self.tabla.setHorizontalHeaderLabels(COLUMNAS)
         self.tabla.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tabla.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tabla.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.tabla.horizontalHeader().setSectionResizeMode(7, QHeaderView.Stretch)
         self.tabla.doubleClicked.connect(self._mostrar_detalles)
+        self.tabla.itemSelectionChanged.connect(self._actualizar_totales_seleccion)
         layout.addWidget(self.tabla)
+
+        self.label_totales = QLabel("Seleccione un clasificador para ver el total de todas las filas.")
+        self.label_totales.setStyleSheet("color: #333; font-weight: 600;")
+        layout.addWidget(self.label_totales)
 
     def _proyecto_id_actual(self) -> int | None:
         return self.combo_proyecto.currentData()
@@ -139,7 +169,11 @@ class PresupuestoView(QWidget):
         self.combo_proyecto.setCurrentIndex(0)
         self.combo_meta.setCurrentIndex(0)
         self.combo_programa.setCurrentIndex(0)
+        self.combo_producto.setCurrentIndex(0)
+        self.combo_actividad.setCurrentIndex(0)
         self.combo_funcion.setCurrentIndex(0)
+        self.combo_division_funcional.setCurrentIndex(0)
+        self.combo_grupo_funcional.setCurrentIndex(0)
         self.combo_rubro.setCurrentIndex(0)
         self.input_busqueda.clear()
         self.cargar_datos()
@@ -148,7 +182,11 @@ class PresupuestoView(QWidget):
         proyecto_id = self._proyecto_id_actual()
         meta_actual = self.combo_meta.currentData()
         programa_actual = self.combo_programa.currentData()
+        producto_actual = self.combo_producto.currentData()
+        actividad_actual = self.combo_actividad.currentData()
         funcion_actual = self.combo_funcion.currentData()
+        division_actual = self.combo_division_funcional.currentData()
+        grupo_actual = self.combo_grupo_funcional.currentData()
         rubro_actual = self.combo_rubro.currentData()
 
         self.combo_meta.blockSignals(True)
@@ -170,6 +208,26 @@ class PresupuestoView(QWidget):
             self.combo_programa.setCurrentIndex(idx)
         self.combo_programa.blockSignals(False)
 
+        self.combo_producto.blockSignals(True)
+        self.combo_producto.clear()
+        self.combo_producto.addItem("Todos los productos", None)
+        for p in PresupuestoController.listar_productos(proyecto_id):
+            self.combo_producto.addItem(str(p), p)
+        idx = self.combo_producto.findData(producto_actual)
+        if idx >= 0:
+            self.combo_producto.setCurrentIndex(idx)
+        self.combo_producto.blockSignals(False)
+
+        self.combo_actividad.blockSignals(True)
+        self.combo_actividad.clear()
+        self.combo_actividad.addItem("Todas las actividades", None)
+        for a in PresupuestoController.listar_actividades(proyecto_id):
+            self.combo_actividad.addItem(str(a), a)
+        idx = self.combo_actividad.findData(actividad_actual)
+        if idx >= 0:
+            self.combo_actividad.setCurrentIndex(idx)
+        self.combo_actividad.blockSignals(False)
+
         self.combo_funcion.blockSignals(True)
         self.combo_funcion.clear()
         self.combo_funcion.addItem("Todas", None)
@@ -179,6 +237,26 @@ class PresupuestoView(QWidget):
         if idx >= 0:
             self.combo_funcion.setCurrentIndex(idx)
         self.combo_funcion.blockSignals(False)
+
+        self.combo_division_funcional.blockSignals(True)
+        self.combo_division_funcional.clear()
+        self.combo_division_funcional.addItem("Todas", None)
+        for d in PresupuestoController.listar_divisiones_funcionales(proyecto_id):
+            self.combo_division_funcional.addItem(str(d), d)
+        idx = self.combo_division_funcional.findData(division_actual)
+        if idx >= 0:
+            self.combo_division_funcional.setCurrentIndex(idx)
+        self.combo_division_funcional.blockSignals(False)
+
+        self.combo_grupo_funcional.blockSignals(True)
+        self.combo_grupo_funcional.clear()
+        self.combo_grupo_funcional.addItem("Todos", None)
+        for g in PresupuestoController.listar_grupos_funcionales(proyecto_id):
+            self.combo_grupo_funcional.addItem(str(g), g)
+        idx = self.combo_grupo_funcional.findData(grupo_actual)
+        if idx >= 0:
+            self.combo_grupo_funcional.setCurrentIndex(idx)
+        self.combo_grupo_funcional.blockSignals(False)
 
         self.combo_rubro.blockSignals(True)
         self.combo_rubro.clear()
@@ -199,7 +277,11 @@ class PresupuestoView(QWidget):
                 texto_busqueda=self.input_busqueda.text(),
                 meta=self.combo_meta.currentData(),
                 programa=self.combo_programa.currentData(),
+                producto=self.combo_producto.currentData(),
+                actividad_codigo=self.combo_actividad.currentData(),
                 funcion=self.combo_funcion.currentData(),
+                division_funcional=self.combo_division_funcional.currentData(),
+                grupo_funcional=self.combo_grupo_funcional.currentData(),
                 rubro=self.combo_rubro.currentData(),
                 categoria=None,  # Categoría deprecada, mantenida para compatibilidad
             )
@@ -212,13 +294,16 @@ class PresupuestoView(QWidget):
         for fila, r in enumerate(registros):
             valores = [
                 r.proyecto.codigo if r.proyecto else "-",
+                r.rubro or "-",
                 r.meta or "-",
                 r.programa or "-",
                 r.producto or "-",
-                f"{r.actividad_codigo or '-'} ({r.actividad_descripcion[:20] if r.actividad_descripcion else '-'})",
+                r.actividad_codigo or "-",
                 r.clasificador or "-",
                 r.descripcion or "-",
                 r.funcion or "-",
+                r.division_funcional or "-",
+                r.grupo_funcional or "-",
                 f"{r.pim:,.2f}",
                 f"{r.certificacion:,.2f}",
                 f"{r.devengado:,.2f}",
@@ -229,6 +314,7 @@ class PresupuestoView(QWidget):
 
         # Actualizar indicador de filtros activos
         self._actualizar_indicador_filtros(len(registros))
+        self._actualizar_totales_seleccion()
 
     def _actualizar_indicador_filtros(self, total_registros: int) -> None:
         """Actualiza el indicador visual de filtros activos."""
@@ -238,8 +324,16 @@ class PresupuestoView(QWidget):
             filtros_activos.append(f"Meta: {self.combo_meta.currentText()}")
         if self.combo_programa.currentData() is not None:
             filtros_activos.append(f"Programa: {self.combo_programa.currentText()}")
+        if self.combo_producto.currentData() is not None:
+            filtros_activos.append(f"Producto: {self.combo_producto.currentText()}")
+        if self.combo_actividad.currentData() is not None:
+            filtros_activos.append(f"Actividad: {self.combo_actividad.currentText()}")
         if self.combo_funcion.currentData() is not None:
             filtros_activos.append(f"Función: {self.combo_funcion.currentText()}")
+        if self.combo_division_funcional.currentData() is not None:
+            filtros_activos.append(f"Div. Funcional: {self.combo_division_funcional.currentText()}")
+        if self.combo_grupo_funcional.currentData() is not None:
+            filtros_activos.append(f"Grupo Func.: {self.combo_grupo_funcional.currentText()}")
         if self.combo_rubro.currentData() is not None:
             filtros_activos.append(f"Rubro: {self.combo_rubro.currentText()[:20]}")
         if self.input_busqueda.text().strip():
@@ -252,6 +346,25 @@ class PresupuestoView(QWidget):
         else:
             self.label_filtros_activos.setText(f"Mostrando {total_registros} registro(s)")
             self.label_filtros_activos.setStyleSheet("color: #666; font-weight: 500;")
+
+    def _actualizar_totales_seleccion(self) -> None:
+        """Actualiza el texto de totales cuando se selecciona un clasificador."""
+        seleccion = self.tabla.selectionModel().selectedRows()
+        if not seleccion:
+            self.label_totales.setText("Seleccione un clasificador para ver el total de todas las filas.")
+            return
+
+        total_pim = 0.0
+        total_certificado = 0.0
+        total_devengado = 0.0
+        for registro in self._registros_actuales:
+            total_pim += registro.pim or 0.0
+            total_certificado += registro.certificacion or 0.0
+            total_devengado += registro.devengado or 0.0
+
+        self.label_totales.setText(
+            f"Total de todas las filas → PIM: {total_pim:,.2f} | Certificado: {total_certificado:,.2f} | Devengado: {total_devengado:,.2f}"
+        )
 
     def _mostrar_detalles(self) -> None:
         """Muestra un diálogo con todos los detalles del presupuesto seleccionado."""

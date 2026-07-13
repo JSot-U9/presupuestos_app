@@ -20,11 +20,26 @@ class PresupuestoController:
     @staticmethod
     def listar(proyecto_id: Optional[int] = None, anio: Optional[int] = None,
                texto_busqueda: str = "", meta: Optional[str] = None,
-               programa: Optional[str] = None, funcion: Optional[str] = None,
+               programa: Optional[str] = None, producto: Optional[str] = None,
+               actividad_codigo: Optional[str] = None, funcion: Optional[str] = None,
+               division_funcional: Optional[str] = None, grupo_funcional: Optional[str] = None,
                rubro: Optional[str] = None, categoria: Optional[str] = None) -> list[Presupuesto]:
         with get_session() as session:
-            registros = PresupuestoService.listar(session, proyecto_id, anio, texto_busqueda, 
-                                                   meta, programa, funcion, rubro, categoria)
+            registros = PresupuestoService.listar(
+                session,
+                proyecto_id,
+                anio,
+                texto_busqueda,
+                meta,
+                programa,
+                producto,
+                actividad_codigo,
+                funcion,
+                division_funcional,
+                grupo_funcional,
+                rubro,
+                categoria,
+            )
             for r in registros:
                 _ = r.proyecto.codigo if r.proyecto else None  # fuerza carga antes de expunge
                 session.expunge(r)
@@ -88,6 +103,24 @@ class PresupuestoController:
             if proyecto_id:
                 query = query.filter(Presupuesto.proyecto_id == proyecto_id)
             return [str(a[0]) for a in query.all() if a[0] is not None]
+
+    @staticmethod
+    def listar_divisiones_funcionales(proyecto_id: Optional[int] = None) -> list[str]:
+        """Retorna lista de códigos de división funcional únicos."""
+        with get_session() as session:
+            query = session.query(Presupuesto.division_funcional).distinct().order_by(Presupuesto.division_funcional)
+            if proyecto_id:
+                query = query.filter(Presupuesto.proyecto_id == proyecto_id)
+            return [str(d[0]) for d in query.all() if d[0] is not None]
+
+    @staticmethod
+    def listar_grupos_funcionales(proyecto_id: Optional[int] = None) -> list[str]:
+        """Retorna lista de códigos de grupo funcional únicos."""
+        with get_session() as session:
+            query = session.query(Presupuesto.grupo_funcional).distinct().order_by(Presupuesto.grupo_funcional)
+            if proyecto_id:
+                query = query.filter(Presupuesto.proyecto_id == proyecto_id)
+            return [str(g[0]) for g in query.all() if g[0] is not None]
 
     @staticmethod
     def eliminar(presupuesto_id: int) -> None:
