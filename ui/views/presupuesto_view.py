@@ -25,7 +25,7 @@ from utils.logger import get_logger
 logger = get_logger(__name__)
 
 COLUMNAS = [
-    "Proyecto", "Rubro", "Meta", "Programa", "Producto", "Actividad / AI / Obra", 
+    "Proyecto", "Rubro", "Meta", "Programa", "Producto", "Actividad / AI / Obra",
     "Clasif. Presu.", "Clasificador de gasto", "Descripción", "Función", "División Funcional", "Grupo Funcional",
     "PIM", "Certificado", "Devengado", "% Avance",
 ]
@@ -65,80 +65,92 @@ class PresupuestoView(QWidget):
         header.addWidget(btn_exportar)
         layout.addLayout(header)
 
-        # Fila 1: Filtros principales (Meta, Programa, Función, Rubro)
-        filtros1 = QHBoxLayout()
-        filtros1.setSpacing(12)
-        
-        filtros1.addWidget(QLabel("🔍 Filtros:"))
-        
+        # Filtros distribuidos en 2 filas
+        filtros_container = QVBoxLayout()
+        filtros_container.setSpacing(8)
+
+        # --- Fila 1: identificación del proyecto (Meta, Programa, Producto, Actividad) ---
+        fila1 = QHBoxLayout()
+        fila1.setSpacing(12)
+        fila1.addWidget(QLabel("🔍 Filtros:"))
+
         # Meta (prioritario)
         self.combo_meta = QComboBox()
         self.combo_meta.setFixedWidth(140)
         self.combo_meta.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("Meta:"))
-        filtros1.addWidget(self.combo_meta)
+        fila1.addWidget(QLabel("Meta:"))
+        fila1.addWidget(self.combo_meta)
 
         self.combo_programa = QComboBox()
         self.combo_programa.setFixedWidth(120)
         self.combo_programa.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("Programa:"))
-        filtros1.addWidget(self.combo_programa)
+        fila1.addWidget(QLabel("Programa:"))
+        fila1.addWidget(self.combo_programa)
 
         self.combo_producto = QComboBox()
         self.combo_producto.setFixedWidth(140)
         self.combo_producto.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("Producto:"))
-        filtros1.addWidget(self.combo_producto)
+        fila1.addWidget(QLabel("Producto:"))
+        fila1.addWidget(self.combo_producto)
 
         self.combo_actividad = QComboBox()
         self.combo_actividad.setFixedWidth(140)
         self.combo_actividad.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("Act/AI/Obra:"))
-        filtros1.addWidget(self.combo_actividad)
+        fila1.addWidget(QLabel("Act/AI/Obra:"))
+        fila1.addWidget(self.combo_actividad)
+
+        fila1.addStretch()
+
+        # --- Fila 2: clasificación funcional y presupuestal + acciones ---
+        fila2 = QHBoxLayout()
+        fila2.setSpacing(12)
 
         self.combo_funcion = QComboBox()
         self.combo_funcion.setFixedWidth(100)
         self.combo_funcion.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("Función:"))
-        filtros1.addWidget(self.combo_funcion)
+        fila2.addWidget(QLabel("Función:"))
+        fila2.addWidget(self.combo_funcion)
 
         self.combo_division_funcional = QComboBox()
         self.combo_division_funcional.setFixedWidth(120)
         self.combo_division_funcional.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("División Funcional:"))
-        filtros1.addWidget(self.combo_division_funcional)
+        fila2.addWidget(QLabel("División Funcional:"))
+        fila2.addWidget(self.combo_division_funcional)
 
         self.combo_grupo_funcional = QComboBox()
         self.combo_grupo_funcional.setFixedWidth(120)
         self.combo_grupo_funcional.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("Grupo Funcional:"))
-        filtros1.addWidget(self.combo_grupo_funcional)
+        fila2.addWidget(QLabel("Grupo Funcional:"))
+        fila2.addWidget(self.combo_grupo_funcional)
 
         self.combo_rubro = QComboBox()
         self.combo_rubro.setFixedWidth(200)
         self.combo_rubro.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("Rubro:"))
-        filtros1.addWidget(self.combo_rubro)
+        fila2.addWidget(QLabel("Rubro:"))
+        fila2.addWidget(self.combo_rubro)
 
         self.combo_clasi_presu = QComboBox()
         self.combo_clasi_presu.setFixedWidth(100)
         self.combo_clasi_presu.currentIndexChanged.connect(self.cargar_datos)
-        filtros1.addWidget(QLabel("Clasif. Presu.:"))
-        filtros1.addWidget(self.combo_clasi_presu)
+        fila2.addWidget(QLabel("Clasif. Presu.:"))
+        fila2.addWidget(self.combo_clasi_presu)
 
         btn_limpiar = QPushButton("🔄 Limpiar Filtros")
         btn_limpiar.setFixedWidth(130)
         btn_limpiar.clicked.connect(self._limpiar_filtros)
-        filtros1.addWidget(btn_limpiar)
+        fila2.addWidget(btn_limpiar)
 
-        filtros1.addStretch()
-        
+        fila2.addStretch()
+
         # Indicador de filtros activos
         self.label_filtros_activos = QLabel()
         self.label_filtros_activos.setStyleSheet("color: #ff7700; font-weight: 600;")
-        filtros1.addWidget(self.label_filtros_activos)
-        
-        layout.addLayout(filtros1)
+        self.label_filtros_activos.setWordWrap(True)
+        fila2.addWidget(self.label_filtros_activos)
+
+        filtros_container.addLayout(fila1)
+        filtros_container.addLayout(fila2)
+        layout.addLayout(filtros_container)
 
         self.tabla = QTableWidget(0, len(COLUMNAS))
         self.tabla.setHorizontalHeaderLabels(COLUMNAS)
@@ -339,7 +351,7 @@ class PresupuestoView(QWidget):
     def _actualizar_indicador_filtros(self, total_registros: int) -> None:
         """Actualiza el indicador visual de filtros activos."""
         filtros_activos = []
-        
+
         if self.combo_meta.currentData() is not None:
             filtros_activos.append(f"Meta: {self.combo_meta.currentText()}")
         if self.combo_programa.currentData() is not None:
@@ -353,7 +365,7 @@ class PresupuestoView(QWidget):
         if self.combo_division_funcional.currentData() is not None:
             filtros_activos.append(f"Div. Funcional: {self.combo_division_funcional.currentText()}")
         if self.combo_grupo_funcional.currentData() is not None:
-            filtros_activos.append(f"Grupo Func.: {self.combo_grupo_funcional.currentText()}")
+            filtros_activos.append(f"\nGrupo Func.: {self.combo_grupo_funcional.currentText()}")
         if self.combo_rubro.currentData() is not None:
             filtros_activos.append(f"Rubro: {self.combo_rubro.currentText()[:20]}")
         if self.combo_clasi_presu.currentData() is not None:
