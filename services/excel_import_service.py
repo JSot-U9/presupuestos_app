@@ -221,7 +221,7 @@ class ExcelPresupuestoImporter:
                 proyecto_codigo, proyecto_nombre = actividad_codigo, actividad_descripcion
                 continue
 
-            if c0.startswith("00 "):
+            if c0.startswith(("00 ", "09 ", "13 ", "18 ")):
                 rubro = c0
                 continue
             if re.match(r"^\d{4}\s", c0):
