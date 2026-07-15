@@ -1,14 +1,14 @@
-/* Tema claro estilo Office para el Sistema de Gestión Presupuestal */
+/* Tema Dorado & Rojo Vino - Sistema de Gestión Presupuestal */
 
 QMainWindow, QWidget {
-    background-color: #F3F2F1;
+    background-color: #F5F0EA;
     font-family: "Segoe UI", "Cantarell", sans-serif;
     font-size: 13px;
-    color: #202020;
+    color: #2B2320;
 }
 
 #TopBar {
-    background-color: #1F4E79;
+    background-color: #6B1F2B;
 }
 
 #TopBarTitle {
@@ -19,7 +19,7 @@ QMainWindow, QWidget {
 
 #Sidebar {
     background-color: #FFFFFF;
-    border-right: 1px solid #E1DFDD;
+    border-right: 1px solid #E3D9C9;
 }
 
 #Sidebar QListWidget {
@@ -36,17 +36,17 @@ QMainWindow, QWidget {
 }
 
 #Sidebar QListWidget::item:selected {
-    background-color: #DEECF9;
-    color: #1F4E79;
+    background-color: #F3E1B5;
+    color: #6B1F2B;
     font-weight: 600;
 }
 
 #Sidebar QListWidget::item:hover:!selected {
-    background-color: #F3F2F1;
+    background-color: #F5F0EA;
 }
 
 QPushButton {
-    background-color: #1F4E79;
+    background-color: #6B1F2B;
     color: white;
     border: none;
     border-radius: 4px;
@@ -54,25 +54,25 @@ QPushButton {
 }
 
 QPushButton:hover {
-    background-color: #2E75B6;
+    background-color: #8C2F3D;
 }
 
 QPushButton:disabled {
-    background-color: #C8C6C4;
+    background-color: #CFC6BC;
 }
 
 QPushButton#SecondaryButton {
     background-color: #FFFFFF;
-    color: #1F4E79;
-    border: 1px solid #1F4E79;
+    color: #6B1F2B;
+    border: 1px solid #6B1F2B;
 }
 
 QPushButton#SecondaryButton:hover {
-    background-color: #DEECF9;
+    background-color: #F3E1B5;
 }
 
 QLineEdit, QComboBox, QDateEdit, QSpinBox {
-    border: 1px solid #C8C6C4;
+    border: 1px solid #CFC6BC;
     border-radius: 4px;
     padding: 6px;
     background: white;
@@ -80,14 +80,14 @@ QLineEdit, QComboBox, QDateEdit, QSpinBox {
 
 QTableWidget {
     background: white;
-    gridline-color: #E1DFDD;
-    border: 1px solid #E1DFDD;
-    selection-background-color: #DEECF9;
-    selection-color: #202020;
+    gridline-color: #E3D9C9;
+    border: 1px solid #E3D9C9;
+    selection-background-color: #F3E1B5;
+    selection-color: #2B2320;
 }
 
 QHeaderView::section {
-    background-color: #1F4E79;
+    background-color: #6B1F2B;
     color: white;
     padding: 6px;
     border: none;
@@ -96,16 +96,16 @@ QHeaderView::section {
 .KpiCard {
     background-color: white;
     border-radius: 8px;
-    border: 1px solid #E1DFDD;
+    border: 1px solid #E3D9C9;
 }
 
 .KpiValue {
     font-size: 22px;
     font-weight: 700;
-    color: #1F4E79;
+    color: #C9A227;
 }
 
 .KpiLabel {
-    color: #605E5C;
+    color: #7A6A55;
     font-size: 12px;
 }
