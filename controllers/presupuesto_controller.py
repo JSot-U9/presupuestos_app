@@ -48,6 +48,12 @@ class PresupuestoController:
             return registros
 
     @staticmethod
+    def listar_valores_filtro(campo: str, **filtros) -> list[str]:
+        """Valores disponibles para un clasificador con los demás filtros aplicados."""
+        with get_session() as session:
+            return PresupuestoService.listar_valores_filtro(session, campo, **filtros)
+
+    @staticmethod
     def listar_metas() -> list[str]:
         """Retorna lista de códigos de meta únicos de la tabla Presupuesto."""
         with get_session() as session:

@@ -198,105 +198,44 @@ class PresupuestoView(QWidget):
         self.cargar_datos()
 
     def _refrescar_filtros(self) -> None:
-        proyecto_id = self._proyecto_id_actual()
-        meta_actual = self.combo_meta.currentData()
-        programa_actual = self.combo_programa.currentData()
-        producto_actual = self.combo_producto.currentData()
-        actividad_actual = self.combo_actividad.currentData()
-        funcion_actual = self.combo_funcion.currentData()
-        division_actual = self.combo_division_funcional.currentData()
-        grupo_actual = self.combo_grupo_funcional.currentData()
-        rubro_actual = self.combo_rubro.currentData()
-        clasi_presu_actual = self.combo_clasi_presu.currentData()
+        filtros = {
+            "proyecto_id": self._proyecto_id_actual(),
+            "texto_busqueda": self.input_busqueda.text(),
+            "meta": self.combo_meta.currentData(),
+            "programa": self.combo_programa.currentData(),
+            "producto": self.combo_producto.currentData(),
+            "actividad_codigo": self.combo_actividad.currentData(),
+            "funcion": self.combo_funcion.currentData(),
+            "division_funcional": self.combo_division_funcional.currentData(),
+            "grupo_funcional": self.combo_grupo_funcional.currentData(),
+            "rubro": self.combo_rubro.currentData(),
+            "clasi_presu": self.combo_clasi_presu.currentData(),
+        }
 
-        self.combo_meta.blockSignals(True)
-        self.combo_meta.clear()
-        self.combo_meta.addItem("Todas las metas", None)
-        for m in PresupuestoController.listar_metas():
-            self.combo_meta.addItem(m, m)
-        idx = self.combo_meta.findData(meta_actual)
-        self.combo_meta.setCurrentIndex(idx if idx >= 0 else 0)
-        self.combo_meta.blockSignals(False)
+        def actualizar(combo: QComboBox, etiqueta_todos: str, campo: str) -> None:
+            actual = filtros[campo]
+            filtros_para_opciones = {k: v for k, v in filtros.items() if k != campo}
+            valores = PresupuestoController.listar_valores_filtro(campo, **filtros_para_opciones)
+            combo.blockSignals(True)
+            combo.clear()
+            combo.addItem(etiqueta_todos, None)
+            for valor in valores:
+                combo.addItem(valor, valor)
+            indice = combo.findData(actual)
+            combo.setCurrentIndex(indice if indice >= 0 else 0)
+            combo.blockSignals(False)
 
-        self.combo_programa.blockSignals(True)
-        self.combo_programa.clear()
-        self.combo_programa.addItem("Todos los prog.", None)
-        for p in PresupuestoController.listar_programas(proyecto_id):
-            self.combo_programa.addItem(str(p), p)
-        idx = self.combo_programa.findData(programa_actual)
-        if idx >= 0:
-            self.combo_programa.setCurrentIndex(idx)
-        self.combo_programa.blockSignals(False)
-
-        self.combo_producto.blockSignals(True)
-        self.combo_producto.clear()
-        self.combo_producto.addItem("Todos los productos", None)
-        for p in PresupuestoController.listar_productos(proyecto_id):
-            self.combo_producto.addItem(str(p), p)
-        idx = self.combo_producto.findData(producto_actual)
-        if idx >= 0:
-            self.combo_producto.setCurrentIndex(idx)
-        self.combo_producto.blockSignals(False)
-
-        self.combo_actividad.blockSignals(True)
-        self.combo_actividad.clear()
-        self.combo_actividad.addItem("Todas las actividades", None)
-        for a in PresupuestoController.listar_actividades(proyecto_id):
-            self.combo_actividad.addItem(str(a), a)
-        idx = self.combo_actividad.findData(actividad_actual)
-        if idx >= 0:
-            self.combo_actividad.setCurrentIndex(idx)
-        self.combo_actividad.blockSignals(False)
-
-        self.combo_funcion.blockSignals(True)
-        self.combo_funcion.clear()
-        self.combo_funcion.addItem("Todas", None)
-        for f in PresupuestoController.listar_funciones(proyecto_id):
-            self.combo_funcion.addItem(str(f), f)
-        idx = self.combo_funcion.findData(funcion_actual)
-        if idx >= 0:
-            self.combo_funcion.setCurrentIndex(idx)
-        self.combo_funcion.blockSignals(False)
-
-        self.combo_division_funcional.blockSignals(True)
-        self.combo_division_funcional.clear()
-        self.combo_division_funcional.addItem("Todas", None)
-        for d in PresupuestoController.listar_divisiones_funcionales(proyecto_id):
-            self.combo_division_funcional.addItem(str(d), d)
-        idx = self.combo_division_funcional.findData(division_actual)
-        if idx >= 0:
-            self.combo_division_funcional.setCurrentIndex(idx)
-        self.combo_division_funcional.blockSignals(False)
-
-        self.combo_grupo_funcional.blockSignals(True)
-        self.combo_grupo_funcional.clear()
-        self.combo_grupo_funcional.addItem("Todos", None)
-        for g in PresupuestoController.listar_grupos_funcionales(proyecto_id):
-            self.combo_grupo_funcional.addItem(str(g), g)
-        idx = self.combo_grupo_funcional.findData(grupo_actual)
-        if idx >= 0:
-            self.combo_grupo_funcional.setCurrentIndex(idx)
-        self.combo_grupo_funcional.blockSignals(False)
-
-        self.combo_rubro.blockSignals(True)
-        self.combo_rubro.clear()
-        self.combo_rubro.addItem("Todos los rubros", None)
-        for r in PresupuestoController.listar_rubros(proyecto_id):
-            self.combo_rubro.addItem(r, r)
-        idx = self.combo_rubro.findData(rubro_actual)
-        if idx >= 0:
-            self.combo_rubro.setCurrentIndex(idx)
-        self.combo_rubro.blockSignals(False)
-
-        self.combo_clasi_presu.blockSignals(True)
-        self.combo_clasi_presu.clear()
-        self.combo_clasi_presu.addItem("Todas", None)
-        for c in PresupuestoController.listar_clasi_presu(proyecto_id):
-            self.combo_clasi_presu.addItem(c, c)
-        idx = self.combo_clasi_presu.findData(clasi_presu_actual)
-        if idx >= 0:
-            self.combo_clasi_presu.setCurrentIndex(idx)
-        self.combo_clasi_presu.blockSignals(False)
+        # Cada selector conserva su valor, pero sus alternativas se limitan a
+        # los registros compatibles con todos los demás clasificadores activos.
+        actualizar(self.combo_meta, "Todas las metas", "meta")
+        actualizar(self.combo_programa, "Todos los prog.", "programa")
+        actualizar(self.combo_producto, "Todos los productos", "producto")
+        actualizar(self.combo_actividad, "Todas las actividades", "actividad_codigo")
+        actualizar(self.combo_funcion, "Todas", "funcion")
+        actualizar(self.combo_division_funcional, "Todas", "division_funcional")
+        actualizar(self.combo_grupo_funcional, "Todos", "grupo_funcional")
+        actualizar(self.combo_rubro, "Todos los rubros", "rubro")
+        actualizar(self.combo_clasi_presu, "Todas", "clasi_presu")
 
     def cargar_datos(self) -> None:
         self._refrescar_combo_proyectos()
